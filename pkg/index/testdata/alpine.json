@@ -1,0 +1,15 @@
+[
+{ "name":"edge", "type":"directory", "mtime":"Wed, 30 Sep 2015 07:58:27 GMT" },
+{ "name":"latest-stable", "type":"directory", "mtime":"Fri, 28 Nov 2025 14:54:01 GMT" },
+{ "name":"v3.16", "type":"directory", "mtime":"Mon, 16 May 2022 19:04:02 GMT" },
+{ "name":"v3.17", "type":"directory", "mtime":"Tue, 09 May 2023 19:39:47 GMT" },
+{ "name":"v3.18", "type":"directory", "mtime":"Tue, 02 May 2023 13:38:03 GMT" },
+{ "name":"v3.19", "type":"directory", "mtime":"Sun, 19 Nov 2023 16:19:37 GMT" },
+{ "name":"v3.20", "type":"directory", "mtime":"Fri, 17 May 2024 13:28:08 GMT" },
+{ "name":"v3.21", "type":"directory", "mtime":"Fri, 29 Nov 2024 20:58:23 GMT" },
+{ "name":"v3.22", "type":"directory", "mtime":"Wed, 28 May 2025 05:24:27 GMT" },
+{ "name":"v3.23", "type":"directory", "mtime":"Fri, 28 Nov 2025 14:54:01 GMT" },
+{ "name":"v3.24", "type":"directory", "mtime":"Mon, 08 Jun 2026 08:20:39 GMT" },
+{ "name":"MIRRORS.txt", "type":"file", "mtime":"Wed, 06 May 2026 22:00:00 GMT", "size":3632 },
+{ "name":"last-updated", "type":"file", "mtime":"Thu, 07 May 2026 21:00:00 GMT", "size":11 }
+]
