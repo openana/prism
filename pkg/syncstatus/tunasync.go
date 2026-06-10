@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"iter"
-	"log/slog"
 	"net/http"
 	"net/url"
 	"slices"
@@ -15,6 +14,7 @@ import (
 	"time"
 
 	"github.com/openana/prism/pkg/meta"
+	"github.com/rs/zerolog"
 )
 
 type TunasyncMirror Mirror // Same definition for now.
@@ -35,7 +35,7 @@ type TunasyncManager struct {
 	cache atomic.Pointer[cache]
 
 	deps struct {
-		logger *slog.Logger
+		logger zerolog.Logger
 	}
 
 	refreshing atomic.Bool
@@ -48,7 +48,7 @@ type cache struct {
 	lastUpdate time.Time
 }
 
-func NewTunasyncManager(cfg TunasyncManagerConfig, baseLogger *slog.Logger) (*TunasyncManager, error) {
+func NewTunasyncManager(cfg TunasyncManagerConfig, logger zerolog.Logger) (*TunasyncManager, error) {
 	mgr := &TunasyncManager{}
 
 	mgr.cfg.cacheTTL = cfg.CacheTTL()
@@ -67,7 +67,7 @@ func NewTunasyncManager(cfg TunasyncManagerConfig, baseLogger *slog.Logger) (*Tu
 		sorted:  []Mirror{},
 	})
 
-	mgr.deps.logger = baseLogger.With("component", "TunasyncManager")
+	mgr.deps.logger = logger.With().Str("module", "TunasyncManager").Logger()
 
 	return mgr, nil
 }
@@ -87,7 +87,7 @@ func (mgr *TunasyncManager) fetchUpstreams() {
 		wg.Go(func() {
 			mirrors, err := fetchSingleUpstream(ctx, u)
 			if err != nil {
-				mgr.deps.logger.Warn("fetch upstream failed", "error", err, "upstream", u)
+				mgr.deps.logger.Warn().Err(err).Str("upstream", u).Msg("fetch upstream failed")
 			}
 
 			mu.Lock()
@@ -95,7 +95,7 @@ func (mgr *TunasyncManager) fetchUpstreams() {
 
 			for _, m := range mirrors {
 				if _, ok := newCache.mirrors[m.Name]; ok {
-					mgr.deps.logger.Warn("duplicate mirror", "mirror", m.Name)
+					mgr.deps.logger.Warn().Str("mirror", m.Name).Msg("duplicate mirror")
 					continue
 				}
 

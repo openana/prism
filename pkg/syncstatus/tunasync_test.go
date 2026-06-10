@@ -4,7 +4,6 @@ package syncstatus
 import (
 	"context"
 	"io"
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -12,6 +11,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/rs/zerolog"
 )
 
 // mockTunasyncConfig implements TunasyncManagerConfig.
@@ -66,7 +67,7 @@ func TestNewTunasyncManager_InvalidUpstream(t *testing.T) {
 				fetchTimeout: 10 * time.Second,
 			}
 
-			_, err := NewTunasyncManager(cfg, slog.Default())
+			_, err := NewTunasyncManager(cfg, zerolog.New(io.Discard))
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("NewTunasyncManager() error = %v, wantErr = %v", err, tt.wantErr)
 			}
@@ -156,8 +157,8 @@ func TestTunasyncManager_All_SortedByName(t *testing.T) {
 }
 
 // testLogger returns a logger that discards output, for clean test runs.
-func testLogger() *slog.Logger {
-	return slog.New(slog.NewTextHandler(io.Discard, nil))
+func testLogger() zerolog.Logger {
+	return zerolog.New(io.Discard)
 }
 
 // newTestManager starts a test HTTP server serving tunasync.json and returns a
