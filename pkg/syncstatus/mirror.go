@@ -1,4 +1,4 @@
-package statemgr
+package syncstatus
 
 type Mirror struct {
 	Name         string `json:"name"`
