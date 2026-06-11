@@ -7,6 +7,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/rs/zerolog"
 )
 
 // mockFetcher implements Fetcher and tracks calls.
@@ -46,10 +48,29 @@ func (m *mockFetcher) calls() int32 {
 type mockCachedProviderConfig struct {
 	ttl      time.Duration
 	maxBytes int
+	fetchers map[string]FetcherConfig
 }
 
-func (m mockCachedProviderConfig) TTL() time.Duration { return m.ttl }
-func (m mockCachedProviderConfig) MaxBytes() int      { return m.maxBytes }
+func (m mockCachedProviderConfig) TTL() time.Duration                 { return m.ttl }
+func (m mockCachedProviderConfig) MaxBytes() int                      { return m.maxBytes }
+func (m mockCachedProviderConfig) Fetchers() map[string]FetcherConfig { return m.fetchers }
+
+// newTestProvider creates a CachedProvider for testing with mock fetchers.
+func newTestProvider(ttl time.Duration, maxBytes int, fetchers map[string]Fetcher) *CachedProvider {
+	fcfgs := make(map[string]FetcherConfig, len(fetchers))
+	for host, f := range fetchers {
+		fcfgs[host] = GenericFetcherConfig{F: f}
+	}
+	p, err := NewCachedProvider(mockCachedProviderConfig{
+		ttl:      ttl,
+		maxBytes: maxBytes,
+		fetchers: fcfgs,
+	}, zerolog.Nop())
+	if err != nil {
+		panic(err)
+	}
+	return p
+}
 
 func TestCachedProvider_AllOrErr_CacheMissThenHit(t *testing.T) {
 	mock := &mockFetcher{
@@ -59,10 +80,7 @@ func TestCachedProvider_AllOrErr_CacheMissThenHit(t *testing.T) {
 		},
 	}
 
-	p := NewCachedProvider(mockCachedProviderConfig{
-		ttl:      10 * time.Second,
-		maxBytes: 1024 * 1024, // 1MB
-	}, map[string]Fetcher{
+	p := newTestProvider(10*time.Second, 1024*1024, map[string]Fetcher{
 		"alpine.example.com": mock,
 	})
 
@@ -113,10 +131,7 @@ func TestCachedProvider_AllOrErr_CacheMissThenHit(t *testing.T) {
 }
 
 func TestCachedProvider_AllOrErr_NonexistentHost(t *testing.T) {
-	p := NewCachedProvider(mockCachedProviderConfig{
-		ttl:      10 * time.Second,
-		maxBytes: 1024 * 1024,
-	}, map[string]Fetcher{})
+	p := newTestProvider(10*time.Second, 1024*1024, map[string]Fetcher{})
 
 	_, err := p.AllOrErr(context.Background(), "no.such.host", []byte("/path"))
 	if err == nil {
@@ -129,10 +144,7 @@ func TestCachedProvider_AllOrErr_UpstreamError(t *testing.T) {
 		err: context.DeadlineExceeded,
 	}
 
-	p := NewCachedProvider(mockCachedProviderConfig{
-		ttl:      10 * time.Second,
-		maxBytes: 1024 * 1024,
-	}, map[string]Fetcher{
+	p := newTestProvider(10*time.Second, 1024*1024, map[string]Fetcher{
 		"err.example.com": mock,
 	})
 
@@ -162,10 +174,7 @@ func TestCachedProvider_AllOrErr_StaleCacheEviction(t *testing.T) {
 	}
 
 	// Use a very short TTL that will expire before the second call.
-	p := NewCachedProvider(mockCachedProviderConfig{
-		ttl:      1 * time.Nanosecond,
-		maxBytes: 1024 * 1024,
-	}, map[string]Fetcher{
+	p := newTestProvider(1*time.Nanosecond, 1024*1024, map[string]Fetcher{
 		"test.example.com": mock,
 	})
 
@@ -207,10 +216,7 @@ func TestCachedProvider_AllOrErr_EmptyPath(t *testing.T) {
 		},
 	}
 
-	p := NewCachedProvider(mockCachedProviderConfig{
-		ttl:      10 * time.Second,
-		maxBytes: 1024 * 1024,
-	}, map[string]Fetcher{
+	p := newTestProvider(10*time.Second, 1024*1024, map[string]Fetcher{
 		"x.example.com": mock,
 	})
 

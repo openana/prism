@@ -22,6 +22,7 @@ type mockNginxFetcherConfig struct {
 func (m mockNginxFetcherConfig) BaseURL() string        { return m.baseURL }
 func (m mockNginxFetcherConfig) Timeout() time.Duration { return m.timeout }
 func (m mockNginxFetcherConfig) TimeLayout() string     { return m.timeLayout }
+func (m mockNginxFetcherConfig) IsFetcherConfig()       {}
 
 func TestNginxFetcher_AllOrErr_ParsesAlpineJSON(t *testing.T) {
 	// Read testdata.

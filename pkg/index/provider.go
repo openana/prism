@@ -9,10 +9,12 @@ import (
 	"time"
 
 	"github.com/VictoriaMetrics/fastcache"
+	"github.com/rs/zerolog"
 	"github.com/valyala/bytebufferpool"
 )
 
 type CachedProviderConfig interface {
+	Fetchers() map[string]FetcherConfig
 	TTL() time.Duration
 	MaxBytes() int
 }
@@ -28,16 +30,24 @@ type CachedProvider struct {
 	fetchers map[string]Fetcher
 }
 
-func NewCachedProvider(cfg CachedProviderConfig, fetchers map[string]Fetcher) *CachedProvider {
+func NewCachedProvider(cfg CachedProviderConfig, logger zerolog.Logger) (*CachedProvider, error) {
 	p := &CachedProvider{}
+
+	// Build fetchers
+	p.fetchers = make(map[string]Fetcher)
+	for host, fcfg := range cfg.Fetchers() {
+		f, err := BuildFetcher(fcfg, logger)
+		if err != nil {
+			return nil, fmt.Errorf("NewCachedProvider: %w", err)
+		}
+		p.fetchers[host] = f
+	}
 
 	p.cfg.ttl = cfg.TTL()
 
 	p.cache = fastcache.New(cfg.MaxBytes())
 
-	p.fetchers = fetchers
-
-	return p
+	return p, nil
 }
 
 func (p *CachedProvider) AllOrErr(ctx context.Context, host string, path []byte) (iter.Seq[Entry], error) {

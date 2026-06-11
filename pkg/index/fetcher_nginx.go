@@ -16,16 +16,15 @@ import (
 var slashBytes = []byte("/")
 
 type NginxFetcherConfig interface {
+	FetcherConfig
 	BaseURL() string // Should have trailing slash. e.g. "https://example.com/api/index/".
 	Timeout() time.Duration
-	TimeLayout() string
 }
 
 type NginxFetcher struct {
 	cfg struct {
-		baseURL    string
-		timeout    time.Duration
-		timeLayout string
+		baseURL string
+		timeout time.Duration
 	}
 
 	deps struct {
@@ -38,9 +37,8 @@ func NewNginxFetcher(cfg NginxFetcherConfig, logger zerolog.Logger) *NginxFetche
 
 	p.cfg.baseURL = cfg.BaseURL()
 	p.cfg.timeout = cfg.Timeout()
-	p.cfg.timeLayout = cfg.TimeLayout()
 
-	p.deps.logger = logger.With().Str("module", "NginxFetcher").Str("baseURL", p.cfg.baseURL).Logger()
+	p.deps.logger = logger.With().Str("module", "index.NginxFetcher").Str("baseURL", p.cfg.baseURL).Logger()
 
 	return p
 }
@@ -99,7 +97,7 @@ func (p *NginxFetcher) AllOrErr(ctx context.Context, path []byte) (iter.Seq[Entr
 				t = Other
 			}
 
-			mtime, err := time.Parse(p.cfg.timeLayout, ne.Mtime)
+			mtime, err := time.Parse(time.RFC1123, ne.Mtime)
 			if err != nil {
 				p.deps.logger.Warn().Err(err).Str("mtime", ne.Mtime).Msg("parse mtime failed")
 				continue

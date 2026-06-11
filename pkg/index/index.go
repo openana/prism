@@ -17,10 +17,6 @@ type Provider interface {
 	AllOrErr(ctx context.Context, host string, path []byte) (iter.Seq[Entry], error)
 }
 
-type Fetcher interface {
-	AllOrErr(ctx context.Context, path []byte) (iter.Seq[Entry], error)
-}
-
 type EntryType int8
 
 const (
