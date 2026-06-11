@@ -11,6 +11,10 @@ type Resolver interface {
 	Append(path []byte, dst []byte) (result []byte, r Record, ok bool)
 }
 
+type TrieResolverConfig interface {
+	Records() map[string]Record
+}
+
 type TrieResolver struct {
 	trie atomic.Pointer[trie.PrefixTrie[Record]]
 
@@ -29,10 +33,10 @@ type Record struct {
 	Prefix string
 }
 
-func NewTrieResolver(routes map[string]Record) *TrieResolver {
+func NewTrieResolver(cfg TrieResolverConfig) *TrieResolver {
 	rt := &TrieResolver{}
 
-	rt.truth.routes = routes
+	rt.truth.routes = cfg.Records()
 	rt.Commit()
 
 	return rt
