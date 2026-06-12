@@ -1,3 +1,4 @@
+// LLM usage: generated with deepseek-v4-pro and modified manually.
 package index
 
 import (

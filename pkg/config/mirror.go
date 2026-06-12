@@ -84,7 +84,7 @@ func (cfg *Config) ToMirrorManager() (*MirrorManager, error) {
 			case "manual":
 				helpURL = m.Help.URL
 			default:
-				return nil, fmt.Errorf("unknown hosts[%q].mirrors[%q].help.mode: %q", m.Help.Mode)
+				return nil, fmt.Errorf("unknown hosts[%q].mirrors[%q].help.mode: %q", host.Name, m.Name, m.Help.Mode)
 			}
 
 			baseMirrors[m.Name] = mirrors.Mirror{
