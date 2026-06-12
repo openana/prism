@@ -9,7 +9,12 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/diode"
+	"github.com/rs/zerolog/pkgerrors"
 )
+
+func init() {
+	zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
+}
 
 type LoggerConfig interface {
 	Level() zerolog.Level
