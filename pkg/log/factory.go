@@ -18,7 +18,20 @@ type LoggerConfig interface {
 	BufferSize() int
 }
 
-func NewLogger(cfg LoggerConfig) (zerolog.Logger, func(), error) {
+func NewLogger(cfg LoggerConfig) (l zerolog.Logger, f func(), e error) {
+	l, f, e = newLogger(cfg)
+	l = l.With().Timestamp().Stack().Logger()
+	return
+}
+
+func NewAccessLogger(cfg AccessLoggerConfig) (l AccessLogger, f func(), e error) {
+	var logger zerolog.Logger
+	logger, f, e = newLogger(cfg)
+	l = AccessLogger(logger.With().Timestamp().Logger())
+	return
+}
+
+func newLogger(cfg LoggerConfig) (zerolog.Logger, func(), error) {
 	output := cfg.Output()
 	if cfg.Level() == zerolog.Disabled {
 		return zerolog.New(io.Discard), func() {}, nil
@@ -27,9 +40,9 @@ func NewLogger(cfg LoggerConfig) (zerolog.Logger, func(), error) {
 		case "":
 			fallthrough
 		case "stderr":
-			return zerolog.New(os.Stderr), func() {}, nil
+			return zerolog.New(os.Stderr).Level(cfg.Level()), func() {}, nil
 		case "stdout":
-			return zerolog.New(os.Stdout), func() {}, nil
+			return zerolog.New(os.Stdout).Level(cfg.Level()), func() {}, nil
 		default:
 			f, err := os.OpenFile(
 				output,
@@ -42,7 +55,7 @@ func NewLogger(cfg LoggerConfig) (zerolog.Logger, func(), error) {
 
 			dw := diode.NewWriter(f, cfg.BufferSize(), cfg.PullInterval(), nil)
 
-			return zerolog.New(dw), func() {
+			return zerolog.New(dw).Level(cfg.Level()), func() {
 				dw.Close()
 				f.Close()
 			}, nil

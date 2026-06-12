@@ -93,9 +93,10 @@ func (eng *Router) HandleRequest(ctx *fasthttp.RequestCtx) {
 
 		case stateEndSuccess:
 			// Log request
-			eng.deps.logger.Info().
+			eng.deps.accessLogger.Info().
 				Int("status", ctx.Response.StatusCode()).
-				Bytes("uri", ctx.URI().RequestURI())
+				Bytes("uri", ctx.URI().RequestURI()).
+				Send()
 
 			return
 

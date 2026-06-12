@@ -14,7 +14,7 @@ import (
 	purl "github.com/openana/prism/pkg/url"
 )
 
-func InitializeServer(cfg *config.Config) (srv *Server, cleanup func(), err error) {
+func InitializeServer(cfg *config.Config) (*Server, func(), error) {
 	wire.Build(
 		NewServer,
 
@@ -34,7 +34,7 @@ func InitializeServer(cfg *config.Config) (srv *Server, cleanup func(), err erro
 		log.LogSet,
 		index.IndexSet,
 	)
-	return
+	return nil, nil, nil
 }
 
 func ProvideServerConfig(cfg *config.Config) (ServerConfig, error) {

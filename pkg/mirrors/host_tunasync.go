@@ -47,6 +47,7 @@ func (h *TunasyncHost) Name() string {
 }
 
 func (h *TunasyncHost) FetchMirrors(ctx context.Context) ([]Mirror, error) {
+	h.logger.Debug().Str("endpoint", h.endpoint).Msg("fetching mirrors")
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, h.endpoint, nil)
 	if err != nil {
 		return nil, err

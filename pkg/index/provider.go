@@ -28,6 +28,8 @@ type CachedProvider struct {
 
 	// Host -> Fetcher
 	fetchers map[string]Fetcher
+
+	logger zerolog.Logger
 }
 
 func NewCachedProvider(cfg CachedProviderConfig, logger zerolog.Logger) (*CachedProvider, error) {
@@ -46,6 +48,8 @@ func NewCachedProvider(cfg CachedProviderConfig, logger zerolog.Logger) (*Cached
 	p.cfg.ttl = cfg.TTL()
 
 	p.cache = fastcache.New(cfg.MaxBytes())
+
+	p.logger = logger.With().Str("module", "index.CachedProvider").Logger()
 
 	return p, nil
 }

@@ -44,6 +44,8 @@ func NewNginxFetcher(cfg NginxFetcherConfig, logger zerolog.Logger) *NginxFetche
 }
 
 func (p *NginxFetcher) AllOrErr(ctx context.Context, path []byte) (iter.Seq[Entry], error) {
+	p.deps.logger.Debug().Bytes("path", path).Msg("fetching index")
+
 	buf := bytebufferpool.Get()
 	defer bytebufferpool.Put(buf)
 

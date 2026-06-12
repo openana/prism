@@ -39,13 +39,13 @@ func InitializeServer(cfg *config.Config) (*Server, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	accessLogger, cleanup2, err := log.ProvideAccessLogger(accessLoggerConfig)
+	accessLogger, cleanup2, err := log.NewAccessLogger(accessLoggerConfig)
 	if err != nil {
 		cleanup()
 		return nil, nil, err
 	}
 	trieResolverConfig := ProvideTrieResolverConfig(cfg)
-	trieResolver := url.NewTrieResolver(trieResolverConfig)
+	trieResolver := url.NewTrieResolver(trieResolverConfig, logger)
 	managerConfig, err := ProvideMirrorManagerConfig(cfg)
 	if err != nil {
 		cleanup2()

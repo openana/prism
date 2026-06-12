@@ -5,6 +5,7 @@ import (
 	"sync/atomic"
 
 	"github.com/openana/prism/pkg/utils/trie"
+	"github.com/rs/zerolog"
 )
 
 type Resolver interface {
@@ -22,6 +23,8 @@ type TrieResolver struct {
 		sync.Mutex
 		routes map[string]Record
 	}
+
+	logger zerolog.Logger
 }
 
 type Record struct {
@@ -33,11 +36,13 @@ type Record struct {
 	Prefix string
 }
 
-func NewTrieResolver(cfg TrieResolverConfig) *TrieResolver {
+func NewTrieResolver(cfg TrieResolverConfig, logger zerolog.Logger) *TrieResolver {
 	rt := &TrieResolver{}
 
 	rt.truth.routes = cfg.Records()
 	rt.Commit()
+
+	rt.logger = logger.With().Str("module", "url.TrieResolver").Logger()
 
 	return rt
 }
@@ -87,10 +92,14 @@ func (rt *TrieResolver) Append(path []byte, dst []byte) (result []byte, r Record
 	var l int
 	r, l, ok = rt.trie.Load().LongestPrefixMatchWithLen(path)
 	if !ok {
+		rt.logger.Debug().Bytes("path", path).Msg("path not resolved")
 		return
 	}
 
 	result = append(dst, r.Prefix...)
-	result = append(dst, path[l:]...)
+	result = append(result, path[l:]...)
+
+	rt.logger.Debug().Bytes("path", path).Bytes("result", result).Str("host", r.Host).Str("fqdn", r.FQDN).Msg("path resolved")
+
 	return
 }
