@@ -10,17 +10,6 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-type State int32
-
-const (
-	New State = iota
-	Starting
-	Running
-	Stopping
-	Stopped
-	Failed
-)
-
 type ServerConfig interface {
 	Listen() string
 }
@@ -57,6 +46,7 @@ func (srv *Server) Run(ctx context.Context) error {
 	}
 
 	srv.logger.Info().Str("listen", srv.cfg.listen).Msg("http listen")
+
 	go func() {
 		if err := srv.http.ListenAndServe(srv.cfg.listen); err != nil {
 			srv.logger.Error().Err(err).Str("listen", srv.cfg.listen).Msg("listen failed")

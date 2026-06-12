@@ -143,6 +143,11 @@ func (eng *Router) HandleRequest(ctx *fasthttp.RequestCtx) {
 				continue
 			}
 
+			errMsg = "not found"
+			errStatus = fasthttp.StatusNotFound
+			state = stateEndFail
+			continue
+
 		case stateHandleIndex:
 			pathBuf := bytebufferpool.Get()
 			defer bytebufferpool.Put(pathBuf)

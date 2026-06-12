@@ -97,6 +97,7 @@ func Load(path string) (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Load: %w", err)
 	}
+	defer f.Close()
 
 	cfg := new(Config)
 

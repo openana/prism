@@ -28,7 +28,8 @@ func (cfg *IndexNginx) ToFetcher() (*NginxFetcher, error) {
 	}
 
 	// Base URL
-	u, err := url.ParseRequestURI(cfg.BaseURL)
+	baseURL := cfg.BaseURL
+	u, err := url.ParseRequestURI(baseURL)
 	if err != nil {
 		return nil, fmt.Errorf("bad base_url: %w", err)
 	}
@@ -41,12 +42,12 @@ func (cfg *IndexNginx) ToFetcher() (*NginxFetcher, error) {
 		return nil, fmt.Errorf("bad base_url: empty host")
 	}
 
-	if cfg.BaseURL[len(cfg.BaseURL)-1] != '/' {
-		cfg.BaseURL = cfg.BaseURL + "/"
+	if baseURL[len(baseURL)-1] != '/' {
+		baseURL = baseURL + "/"
 	}
 
 	return &NginxFetcher{
-		baseURL: cfg.BaseURL,
+		baseURL: baseURL,
 		timeout: timeout,
 	}, nil
 }
