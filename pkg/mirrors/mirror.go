@@ -3,10 +3,12 @@ package mirrors
 type Mirror struct {
 	Name       string      `json:"name"`
 	Metadata   *Metadata   `json:"metadata,omitempty"`
-	SyncStatus *SyncStatus `json:"sync_status,omitempty"`
+	SyncStatus *SyncStatus `json:"sync,omitempty"`
 }
 
 type Metadata struct {
+	// "rsync", "proxy", "git"
+	Type    string `json:"type"`
 	Desc    string `json:"desc"`
 	URL     string `json:"url"`
 	HelpURL string `json:"help_url"`
