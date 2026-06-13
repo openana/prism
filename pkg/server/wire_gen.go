@@ -52,7 +52,7 @@ func InitializeServer(cfg *config.Config) (*Server, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	manager, err := mirrors.NewManager(managerConfig, logger)
+	manager, cleanup3, err := mirrors.NewManager(managerConfig, logger)
 	if err != nil {
 		cleanup2()
 		cleanup()
@@ -60,12 +60,14 @@ func InitializeServer(cfg *config.Config) (*Server, func(), error) {
 	}
 	cachedProviderConfig, err := ProvideCachedIndexProviderConfig(cfg)
 	if err != nil {
+		cleanup3()
 		cleanup2()
 		cleanup()
 		return nil, nil, err
 	}
 	cachedProvider, err := index.NewCachedProvider(cachedProviderConfig, logger)
 	if err != nil {
+		cleanup3()
 		cleanup2()
 		cleanup()
 		return nil, nil, err
@@ -73,6 +75,7 @@ func InitializeServer(cfg *config.Config) (*Server, func(), error) {
 	routerRouter := router.NewRouter(routerConfig, logger, accessLogger, trieResolver, manager, cachedProvider)
 	server := NewServer(serverConfig, routerRouter, logger)
 	return server, func() {
+		cleanup3()
 		cleanup2()
 		cleanup()
 	}, nil

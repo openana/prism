@@ -11,6 +11,12 @@ import (
 	"time"
 
 	"github.com/rs/zerolog"
+	"golang.org/x/sync/singleflight"
+)
+
+const (
+	initialBackoff = 5 * time.Second
+	maxBackoff     = time.Minute
 )
 
 type ManagerConfig interface {
@@ -22,9 +28,11 @@ type ManagerConfig interface {
 
 type Manager struct {
 	cfg struct {
-		cacheTTL     time.Duration
-		fetchTimeout time.Duration
-		baseMirrors  map[string]Mirror
+		baseMirrors    map[string]Mirror
+		cacheTTL       time.Duration
+		fetchTimeout   time.Duration
+		initialBackoff time.Duration
+		maxBackoff     time.Duration
 	}
 
 	cache atomic.Pointer[cache]
@@ -34,33 +42,40 @@ type Manager struct {
 		hosts  []Host
 	}
 
-	fetching atomic.Bool
+	ctx     context.Context
+	cancel  context.CancelFunc
+	sf      singleflight.Group
+	backoff time.Duration
 }
 
 // cache MUST NOT be modifed once set in manager.
 type cache struct {
-	mirrors    map[string]Mirror
-	sorted     []Mirror
-	lastUpdate time.Time
+	mirrors      map[string]Mirror
+	sorted       []Mirror
+	refreshAfter time.Time
 }
 
-func NewManager(cfg ManagerConfig, logger zerolog.Logger) (*Manager, error) {
+func NewManager(cfg ManagerConfig, logger zerolog.Logger) (*Manager, func(), error) {
 	// Build hosts
 	var hosts []Host
 
 	for _, hcfg := range cfg.Hosts() {
 		h, err := BuildHost(hcfg, logger)
 		if err != nil {
-			return nil, fmt.Errorf("NewManager: %w", err)
+			return nil, nil, fmt.Errorf("NewManager: %w", err)
 		}
 		hosts = append(hosts, h)
 	}
+
+	ctx, cancel := context.WithCancel(context.Background())
 
 	mgr := &Manager{}
 
 	mgr.cfg.cacheTTL = cfg.CacheTTL()
 	mgr.cfg.fetchTimeout = cfg.FetchTimeout()
 	mgr.cfg.baseMirrors = cfg.BaseMirrors()
+	mgr.cfg.initialBackoff = initialBackoff
+	mgr.cfg.maxBackoff = maxBackoff
 
 	mgr.cache.Store(&cache{
 		mirrors: make(map[string]Mirror),
@@ -71,14 +86,31 @@ func NewManager(cfg ManagerConfig, logger zerolog.Logger) (*Manager, error) {
 
 	mgr.deps.hosts = hosts
 
-	return mgr, nil
+	mgr.ctx = ctx
+	mgr.cancel = cancel
+	mgr.backoff = mgr.cfg.initialBackoff
+
+	return mgr, cancel, nil
 }
 
-// Does not guarantee info younger than ttl.
+// All returns an iterator over all mirrors. If the cache is stale and not in
+// backoff, it blocks until a fresh fetch completes (or the manager is shut down).
 func (mgr *Manager) All() iter.Seq[Mirror] {
 	c := mgr.cache.Load()
 
-	mgr.refreshIfStale(c.lastUpdate)
+	if time.Now().After(c.refreshAfter) {
+		ch := mgr.sf.DoChan("fetch", func() (any, error) {
+			mgr.fetch()
+			return nil, nil
+		})
+
+		select {
+		case <-ch:
+		case <-mgr.ctx.Done():
+		}
+	}
+
+	c = mgr.cache.Load()
 
 	return func(yield func(Mirror) bool) {
 		for _, m := range c.sorted {
@@ -89,22 +121,9 @@ func (mgr *Manager) All() iter.Seq[Mirror] {
 	}
 }
 
-func (mgr *Manager) refreshIfStale(lastUpdate time.Time) {
-	if time.Since(lastUpdate) < mgr.cfg.cacheTTL {
-		return
-	}
-
-	if !mgr.fetching.CompareAndSwap(false, true) {
-		return
-	}
-
-	go func() {
-		defer mgr.fetching.Store(false)
-		mgr.fetch()
-	}()
-}
-
 func (mgr *Manager) fetch() {
+	oldCache := mgr.cache.Load()
+
 	newCache := &cache{
 		mirrors: make(map[string]Mirror),
 	}
@@ -112,8 +131,10 @@ func (mgr *Manager) fetch() {
 	var wg sync.WaitGroup
 	var mu sync.Mutex // Protects newCache.mirrors
 
-	ctx, cancel := context.WithTimeout(context.Background(), mgr.cfg.fetchTimeout)
+	ctx, cancel := context.WithTimeout(mgr.ctx, mgr.cfg.fetchTimeout)
 	defer cancel()
+
+	allFailed := len(mgr.deps.hosts) > 0
 
 	for _, h := range mgr.deps.hosts {
 		wg.Go(func() {
@@ -124,7 +145,7 @@ func (mgr *Manager) fetch() {
 			}
 
 			mu.Lock()
-			defer mu.Unlock()
+			allFailed = false
 
 			for _, m := range mirrors {
 				if _, ok := newCache.mirrors[m.Name]; ok {
@@ -135,6 +156,7 @@ func (mgr *Manager) fetch() {
 
 				newCache.mirrors[m.Name] = m
 			}
+			mu.Unlock()
 		})
 	}
 
@@ -159,7 +181,18 @@ func (mgr *Manager) fetch() {
 		return cmp.Compare(a.Name, b.Name)
 	})
 
-	newCache.lastUpdate = time.Now()
-
+	if allFailed {
+		if mgr.backoff > mgr.cfg.maxBackoff {
+			newCache.refreshAfter = time.Now().Add(mgr.cfg.maxBackoff)
+		} else {
+			newCache.refreshAfter = time.Now().Add(mgr.backoff)
+			mgr.backoff *= 2
+		}
+		newCache.mirrors = oldCache.mirrors
+		newCache.sorted = oldCache.sorted
+	} else {
+		mgr.backoff = mgr.cfg.initialBackoff
+		newCache.refreshAfter = time.Now().Add(mgr.cfg.cacheTTL)
+	}
 	mgr.cache.Store(newCache)
 }
