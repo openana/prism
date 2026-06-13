@@ -1,10 +1,10 @@
 ## TODOs
 #### Mirror Manager:
-- [ ] Mirrorz support
-- [ ] Limit status, type
+- [x] Mirrorz support
+- [x] Limit status, type
 
 #### URL Resolver
-- [ ] Ignore according to type (proxy/static)
+~~- [ ] Ignore according to type (proxy/static)~~
 
 #### Router
 - [ ] Static files
