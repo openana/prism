@@ -270,7 +270,25 @@ func (eng *Router) handleMirrorsRequest(ctx *fasthttp.RequestCtx) {
 }
 
 func (eng *Router) handleMirrorzRequest(ctx *fasthttp.RequestCtx) {
-	// TODO: mirrorz
-	eng.deps.logger.Debug().Msg("mirrorz requested, not implemented")
-	ctx.SetStatusCode(fasthttp.StatusNotImplemented)
+	// HEAD requests: return 200 with no body, skip mirrorz generation
+	if ctx.IsHead() {
+		ctx.SetStatusCode(fasthttp.StatusOK)
+		return
+	}
+
+	mirrorz, err := eng.deps.mirrorGetter.Mirrorz()
+	if err != nil {
+		eng.deps.logger.Error().Err(err).Msg("mirrorz generation failed")
+		ctx.Error("internal server error", fasthttp.StatusInternalServerError)
+		return
+	}
+
+	setHeaderJSON(ctx)
+
+	ctx.SetBodyStreamWriter(func(w *bufio.Writer) {
+		enc := json.NewEncoder(w)
+		if err := enc.Encode(mirrorz); err != nil {
+			eng.deps.logger.Error().Err(err).Msg("mirrorz encode failed")
+		}
+	})
 }

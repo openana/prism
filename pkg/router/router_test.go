@@ -39,7 +39,9 @@ func (r stubResolver) Append(path []byte, dst []byte) ([]byte, purl.Record, bool
 
 // stubGetter implements mirrors.Getter.
 type stubGetter struct {
-	mirrors []mirrors.Mirror
+	mirrors    []mirrors.Mirror
+	mirrorz    *mirrors.Mirrorz
+	mirrorzErr error
 }
 
 func (g stubGetter) All() iter.Seq[mirrors.Mirror] {
@@ -50,6 +52,10 @@ func (g stubGetter) All() iter.Seq[mirrors.Mirror] {
 			}
 		}
 	}
+}
+
+func (g stubGetter) Mirrorz() (*mirrors.Mirrorz, error) {
+	return g.mirrorz, g.mirrorzErr
 }
 
 // stubProvider implements index.Provider.
@@ -275,16 +281,93 @@ func TestRouter_Mirrors_Empty(t *testing.T) {
 	}
 }
 
-func TestRouter_Mirrorz(t *testing.T) {
-	router := newTestRouter(stubResolver{ok: false}, stubGetter{}, stubProvider{})
+func TestRouter_Mirrorz_Success(t *testing.T) {
+	mz := &mirrors.Mirrorz{
+		Version: mirrors.MzVersion,
+		Site: mirrors.Site{
+			Url:  "https://example.org",
+			Abbr: "EXAMPLE",
+		},
+		Mirrors: []mirrors.MirrorzEntry{
+			{Cname: "alpine", Desc: "Alpine Linux"},
+		},
+	}
+	getter := stubGetter{mirrorz: mz}
+	router := newTestRouter(stubResolver{ok: false}, getter, stubProvider{})
+
+	var ctx fasthttp.RequestCtx
+	ctx.Request.SetRequestURI("/api/mirrorz")
+	ctx.Request.Header.SetMethod("GET")
+
+	router.HandleRequest(&ctx)
+
+	if got := ctx.Response.StatusCode(); got != fasthttp.StatusOK {
+		t.Fatalf("expected status %d, got %d", fasthttp.StatusOK, got)
+	}
+	if ct := string(ctx.Response.Header.Peek("Content-Type")); ct != "application/json" {
+		t.Errorf("expected Content-Type application/json, got %q", ct)
+	}
+
+	var decoded mirrors.Mirrorz
+	if err := json.Unmarshal(ctx.Response.Body(), &decoded); err != nil {
+		t.Fatalf("response body is not valid JSON: %v", err)
+	}
+	if len(decoded.Mirrors) != 1 || decoded.Mirrors[0].Cname != "alpine" {
+		t.Errorf("unexpected mirrors content: %+v", decoded.Mirrors)
+	}
+}
+
+func TestRouter_Mirrorz_HEAD(t *testing.T) {
+	getter := stubGetter{
+		mirrorz:    nil, // would panic if Mirrorz() were called
+		mirrorzErr: nil,
+	}
+	router := newTestRouter(stubResolver{ok: false}, getter, stubProvider{})
+
+	var ctx fasthttp.RequestCtx
+	ctx.Request.SetRequestURI("/api/mirrorz")
+	ctx.Request.Header.SetMethod("HEAD")
+
+	router.HandleRequest(&ctx)
+
+	if got := ctx.Response.StatusCode(); got != fasthttp.StatusOK {
+		t.Fatalf("expected status %d, got %d", fasthttp.StatusOK, got)
+	}
+	if len(ctx.Response.Body()) != 0 {
+		t.Errorf("expected empty body for HEAD request, got %q", string(ctx.Response.Body()))
+	}
+}
+
+func TestRouter_Mirrorz_Error(t *testing.T) {
+	getter := stubGetter{mirrorzErr: io.ErrUnexpectedEOF}
+	router := newTestRouter(stubResolver{ok: false}, getter, stubProvider{})
+
+	var ctx fasthttp.RequestCtx
+	ctx.Request.SetRequestURI("/api/mirrorz")
+	ctx.Request.Header.SetMethod("GET")
+
+	router.HandleRequest(&ctx)
+
+	assertStatusAndBodyContains(t, &ctx, fasthttp.StatusInternalServerError, "internal server error")
+}
+
+func TestRouter_Mirrorz_Empty(t *testing.T) {
+	getter := stubGetter{mirrorz: &mirrors.Mirrorz{
+		Site: mirrors.Site{Url: "https://example.org", Abbr: "EX"},
+	}}
+	router := newTestRouter(stubResolver{ok: false}, getter, stubProvider{})
 
 	var ctx fasthttp.RequestCtx
 	ctx.Request.SetRequestURI("/api/mirrorz")
 
 	router.HandleRequest(&ctx)
 
-	if got := ctx.Response.StatusCode(); got != fasthttp.StatusNoContent {
-		t.Fatalf("expected status %d, got %d", fasthttp.StatusNoContent, got)
+	if got := ctx.Response.StatusCode(); got != fasthttp.StatusOK {
+		t.Fatalf("expected status %d, got %d", fasthttp.StatusOK, got)
+	}
+	var decoded mirrors.Mirrorz
+	if err := json.Unmarshal(ctx.Response.Body(), &decoded); err != nil {
+		t.Fatalf("response body is not valid JSON: %v", err)
 	}
 }
 
@@ -352,7 +435,7 @@ func TestRouter_Static(t *testing.T) {
 
 	router.HandleRequest(&ctx)
 
-	if got := ctx.Response.StatusCode(); got != fasthttp.StatusNoContent {
-		t.Fatalf("expected status %d, got %d", fasthttp.StatusNoContent, got)
+	if got := ctx.Response.StatusCode(); got != fasthttp.StatusNotImplemented {
+		t.Fatalf("expected status %d, got %d", fasthttp.StatusNotImplemented, got)
 	}
 }

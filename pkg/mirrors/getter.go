@@ -6,4 +6,5 @@ import (
 
 type Getter interface {
 	All() iter.Seq[Mirror]
+	Mirrorz() (*Mirrorz, error)
 }

@@ -24,6 +24,8 @@ type ManagerConfig interface {
 	CacheTTL() time.Duration
 	FetchTimeout() time.Duration
 	BaseMirrors() map[string]Mirror
+	MirrorzSite() *Site
+	MirrorzInfo() []Info
 }
 
 type Manager struct {
@@ -33,6 +35,8 @@ type Manager struct {
 		fetchTimeout   time.Duration
 		initialBackoff time.Duration
 		maxBackoff     time.Duration
+		mirrorzSite    Site
+		mirrorzInfo    []Info
 	}
 
 	cache atomic.Pointer[cache]
@@ -77,6 +81,11 @@ func NewManager(cfg ManagerConfig, logger zerolog.Logger) (*Manager, func(), err
 	mgr.cfg.initialBackoff = initialBackoff
 	mgr.cfg.maxBackoff = maxBackoff
 
+	if s := cfg.MirrorzSite(); s != nil {
+		mgr.cfg.mirrorzSite = *s
+	}
+	mgr.cfg.mirrorzInfo = cfg.MirrorzInfo()
+
 	mgr.cache.Store(&cache{
 		mirrors: make(map[string]Mirror),
 		sorted:  []Mirror{},
@@ -110,9 +119,8 @@ func (mgr *Manager) All() iter.Seq[Mirror] {
 		case <-mgr.ctx.Done():
 			mgr.deps.logger.Debug().Msg("manager context done, skipping fetch")
 		}
+		c = mgr.cache.Load()
 	}
-
-	c = mgr.cache.Load()
 
 	return func(yield func(Mirror) bool) {
 		for _, m := range c.sorted {
@@ -199,4 +207,66 @@ func (mgr *Manager) fetch() {
 		mgr.deps.logger.Debug().Int("mirrors", len(newCache.sorted)).Msg("cache refreshed")
 	}
 	mgr.cache.Store(newCache)
+}
+
+// Mirrorz builds the MirrorZ JSON response. If the cache is stale, it triggers
+// a fresh upstream fetch (respecting cache TTL) and merges the results into the
+// cache so that other consumers benefit from the fresh data.
+func (mgr *Manager) Mirrorz() (*Mirrorz, error) {
+	c := mgr.cache.Load()
+
+	if time.Now().After(c.refreshAfter) {
+		mgr.deps.logger.Debug().Msg("mirrorz: cache stale, triggering fetch")
+		ch := mgr.sf.DoChan("fetch", func() (any, error) {
+			mgr.fetch()
+			return nil, nil
+		})
+
+		select {
+		case <-ch:
+		case <-mgr.ctx.Done():
+			mgr.deps.logger.Debug().Msg("mirrorz: manager context done during fetch")
+			return nil, mgr.ctx.Err()
+		}
+
+		c = mgr.cache.Load()
+	}
+
+	entries := make([]MirrorzEntry, 0, len(c.sorted))
+	for _, m := range c.sorted {
+		entry := MirrorzEntry{
+			Cname: m.Name,
+		}
+
+		if m.Metadata != nil {
+			switch m.Metadata.Type {
+			case Rsync:
+			case Git:
+			case Proxy:
+			default:
+				continue
+			}
+			entry.Desc = m.Metadata.Desc
+			entry.Url = m.Metadata.URL
+			entry.Help = m.Metadata.HelpURL
+		}
+
+		if m.Sync != nil {
+			entry.Status = BuildMirrorzStatus(m.Sync)
+			entry.Upstream = m.Sync.Upstream
+			entry.Size = mirrorzSize(m.Sync.Size)
+		} else {
+			entry.Status = "U"
+			entry.Disable = true
+		}
+
+		entries = append(entries, entry)
+	}
+
+	return &Mirrorz{
+		Version: MzVersion,
+		Site:    mgr.cfg.mirrorzSite,
+		Info:    mgr.cfg.mirrorzInfo,
+		Mirrors: entries,
+	}, nil
 }

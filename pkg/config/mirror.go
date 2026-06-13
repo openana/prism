@@ -42,12 +42,16 @@ type MirrorManager struct {
 	cacheTTL     time.Duration
 	fetchTimeout time.Duration
 	baseMirrors  map[string]mirrors.Mirror
+	mirrorzSite  *mirrors.Site
+	mirrorzInfo  []mirrors.Info
 }
 
 func (cfg *MirrorManager) Hosts() []mirrors.HostConfig            { return cfg.hosts }
 func (cfg *MirrorManager) CacheTTL() time.Duration                { return cfg.cacheTTL }
 func (cfg *MirrorManager) FetchTimeout() time.Duration            { return cfg.fetchTimeout }
 func (cfg *MirrorManager) BaseMirrors() map[string]mirrors.Mirror { return cfg.baseMirrors }
+func (cfg *MirrorManager) MirrorzSite() *mirrors.Site             { return cfg.mirrorzSite }
+func (cfg *MirrorManager) MirrorzInfo() []mirrors.Info            { return cfg.mirrorzInfo }
 
 func (cfg *Config) ToMirrorManager() (*MirrorManager, error) {
 	// Cache TTL
@@ -140,10 +144,50 @@ func (cfg *Config) ToMirrorManager() (*MirrorManager, error) {
 		}
 	}
 
+	// Mirrorz site
+	var mirrorzSite *mirrors.Site
+	if cfg.Mirrorz.Site.Url != "" || cfg.Mirrorz.Site.Abbr != "" {
+		mirrorzSite = &mirrors.Site{
+			Url:          cfg.Mirrorz.Site.Url,
+			Logo:         cfg.Mirrorz.Site.Logo,
+			LogoDarkmode: cfg.Mirrorz.Site.LogoDarkmode,
+			Abbr:         cfg.Mirrorz.Site.Abbr,
+			Name:         cfg.Mirrorz.Site.Name,
+			Homepage:     cfg.Mirrorz.Site.Homepage,
+			Issue:        cfg.Mirrorz.Site.Issue,
+			Request:      cfg.Mirrorz.Site.Request,
+			Email:        cfg.Mirrorz.Site.Email,
+			Group:        cfg.Mirrorz.Site.Group,
+			Disk:         cfg.Mirrorz.Site.Disk,
+			Note:         cfg.Mirrorz.Site.Note,
+			Big:          cfg.Mirrorz.Site.Big,
+			Disable:      cfg.Mirrorz.Site.Disable,
+		}
+	}
+
+	// Mirrorz info
+	mirrorzInfo := make([]mirrors.Info, 0, len(cfg.Mirrorz.Info))
+	for _, info := range cfg.Mirrorz.Info {
+		urls := make([]mirrors.MirrorzURL, 0, len(info.Urls))
+		for _, u := range info.Urls {
+			urls = append(urls, mirrors.MirrorzURL{
+				Name: u.Name,
+				Url:  u.Url,
+			})
+		}
+		mirrorzInfo = append(mirrorzInfo, mirrors.Info{
+			Distro:   info.Distro,
+			Category: info.Category,
+			Urls:     urls,
+		})
+	}
+
 	return &MirrorManager{
 		hosts:        hosts,
 		cacheTTL:     ttl,
 		fetchTimeout: fetchTimeout,
 		baseMirrors:  baseMirrors,
+		mirrorzSite:  mirrorzSite,
+		mirrorzInfo:  mirrorzInfo,
 	}, nil
 }

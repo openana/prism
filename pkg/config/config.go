@@ -23,6 +23,8 @@ type Config struct {
 	StaticMirrors []StaticMirror `yaml:"static_mirrors"`
 
 	Misc Misc `yaml:"misc"`
+
+	Mirrorz Mirrorz `yaml:"mirrorz"`
 }
 
 type Log struct {
@@ -104,6 +106,39 @@ type StaticMirror struct {
 	Help          MirrorHelp `yaml:"help"`
 }
 
+type Mirrorz struct {
+	Site MirrorzSite   `yaml:"site"`
+	Info []MirrorzInfo `yaml:"info"`
+}
+
+type MirrorzSite struct {
+	Url          string `yaml:"url"`
+	Logo         string `yaml:"logo"`
+	LogoDarkmode string `yaml:"logo_darkmode"`
+	Abbr         string `yaml:"abbr"`
+	Name         string `yaml:"name"`
+	Homepage     string `yaml:"homepage"`
+	Issue        string `yaml:"issue"`
+	Request      string `yaml:"request"`
+	Email        string `yaml:"email"`
+	Group        string `yaml:"group"`
+	Disk         string `yaml:"disk"`
+	Note         string `yaml:"note"`
+	Big          string `yaml:"big"`
+	Disable      bool   `yaml:"disable"`
+}
+
+type MirrorzInfo struct {
+	Distro   string       `yaml:"distro"`
+	Category string       `yaml:"category"`
+	Urls     []MirrorzURL `yaml:"urls"`
+}
+
+type MirrorzURL struct {
+	Name string `yaml:"name"`
+	Url  string `yaml:"url"`
+}
+
 func Load(path string) (*Config, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -158,6 +193,35 @@ func (cfg *Config) validate() error {
 
 		if m.Name == "" {
 			return fmt.Errorf("empty static_mirrors[%d].name", i)
+		}
+	}
+
+	// Mirrorz
+	if cfg.Mirrorz.Site.Url != "" || cfg.Mirrorz.Site.Abbr != "" {
+		if cfg.Mirrorz.Site.Url == "" {
+			return fmt.Errorf("mirrorz.site.url is required when mirrorz is configured")
+		}
+		if cfg.Mirrorz.Site.Abbr == "" {
+			return fmt.Errorf("mirrorz.site.abbr is required when mirrorz is configured")
+		}
+		if cfg.Mirrorz.Site.Url[len(cfg.Mirrorz.Site.Url)-1] == '/' {
+			return fmt.Errorf("mirrorz.site.url must not end with '/'")
+		}
+		for i, info := range cfg.Mirrorz.Info {
+			if info.Distro == "" {
+				return fmt.Errorf("empty mirrorz.info[%d].distro", i)
+			}
+			if info.Category == "" {
+				return fmt.Errorf("empty mirrorz.info[%d].category", i)
+			}
+			for j, u := range info.Urls {
+				if u.Name == "" {
+					return fmt.Errorf("empty mirrorz.info[%d].urls[%d].name", i, j)
+				}
+				if u.Url == "" {
+					return fmt.Errorf("empty mirrorz.info[%d].urls[%d].url", i, j)
+				}
+			}
 		}
 	}
 
