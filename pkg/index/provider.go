@@ -104,7 +104,7 @@ func (p *CachedProvider) AllOrErr(ctx context.Context, host string, path []byte)
 	if !ok {
 		bytebufferpool.Put(buf)
 		bytebufferpool.Put(key)
-		return nil, fmt.Errorf("CachedProvider: nonexistent host %q", host)
+		return nil, ErrNotFound
 	}
 
 	it, err := f.AllOrErr(ctx, path)

@@ -22,6 +22,15 @@ func (cfg *Config) ToTrieResolver() *TrieResolver {
 		}
 	}
 
+	// Static mirrors have higher precedence
+	for _, m := range cfg.StaticMirrors {
+		records[m.URLPrefix] = url.Record{
+			Host:   "",
+			FQDN:   m.FQDN,
+			Prefix: m.RealURLPrefix,
+		}
+	}
+
 	return &TrieResolver{
 		records: records,
 	}

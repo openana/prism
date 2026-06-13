@@ -57,6 +57,7 @@ var (
 	pathAPI    = []byte("api/")
 	pathStatic = []byte("static/")
 	// "api/"
+	pathPing    = []byte("ping")
 	pathIndex   = []byte("index")
 	pathMirrors = []byte("mirrors")
 	pathMirrorz = []byte("mirrorz")
@@ -126,19 +127,25 @@ func (eng *Router) HandleRequest(ctx *fasthttp.RequestCtx) {
 			continue
 
 		case stateHandleAPI:
-			if bytes.HasPrefix(path, pathIndex) {
+			if bytes.Equal(path, pathIndex) {
 				state = stateHandleIndex
 				continue
 			}
 
-			if bytes.HasPrefix(path, pathMirrors) {
+			if bytes.Equal(path, pathMirrors) {
 				eng.handleMirrorsRequest(ctx)
 				state = stateEndSuccess
 				continue
 			}
 
-			if bytes.HasPrefix(path, pathMirrorz) {
+			if bytes.Equal(path, pathMirrorz) {
 				eng.handleMirrorzRequest(ctx)
+				state = stateEndSuccess
+				continue
+			}
+
+			if bytes.Equal(path, pathPing) {
+				ctx.WriteString("pong")
 				state = stateEndSuccess
 				continue
 			}

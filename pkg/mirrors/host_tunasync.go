@@ -77,14 +77,16 @@ func (h *TunasyncHost) FetchMirrors(ctx context.Context) ([]Mirror, error) {
 	for _, tm := range tms {
 		size, err := units.FromHumanSize(tm.Size)
 		if err != nil {
-			h.logger.Warn().Err(err).Msg("parse size error")
+			if tm.Size != "unknown" {
+				h.logger.Warn().Err(err).Msg("parse size error")
+			}
 			size = -1
 		}
 
 		mirrors = append(mirrors, Mirror{
 			Name: tm.Name,
-			SyncStatus: &SyncStatus{
-				Status:       tm.Status,
+			Sync: &Sync{
+				Status:       SyncStatusFromString(tm.Status),
 				LastUpdate:   tm.LastUpdate,
 				LastStarted:  tm.LastStarted,
 				LastEnded:    tm.LastEnded,

@@ -20,6 +20,8 @@ type Config struct {
 
 	Hosts []Host `yaml:"hosts"`
 
+	StaticMirrors []StaticMirror `yaml:"static_mirrors"`
+
 	Misc Misc `yaml:"misc"`
 }
 
@@ -92,6 +94,16 @@ type Misc struct {
 	HelpURLPrefix string `yaml:"help_url_prefix"`
 }
 
+type StaticMirror struct {
+	FQDN          string     `yaml:"fqdn"`
+	Name          string     `yaml:"name"`
+	Desc          string     `yaml:"desc"`
+	Type          string     `yaml:"type"`
+	URLPrefix     string     `yaml:"url_prefix"`
+	RealURLPrefix string     `yaml:"real_url_prefix"`
+	Help          MirrorHelp `yaml:"help"`
+}
+
 func Load(path string) (*Config, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -113,15 +125,40 @@ func Load(path string) (*Config, error) {
 }
 
 func (cfg *Config) validate() error {
-	// Host uniqueness
+	// Host correctness
 	hosts := map[string]struct{}{}
 
-	for _, host := range cfg.Hosts {
+	for i, host := range cfg.Hosts {
+		if host.Name == "" {
+			return fmt.Errorf("empty hosts[%d].name", i)
+		}
+		if host.FQDN == "" {
+			return fmt.Errorf("empty hosts[%d].fqdn", i)
+		}
+
 		_, ok := hosts[host.Name]
 		if ok {
 			return fmt.Errorf("hosts[%q]: duplicate host name", host.Name)
 		}
 		hosts[host.Name] = struct{}{}
+
+		// mirrors
+		for j, m := range host.Mirrors {
+			if m.Name == "" {
+				return fmt.Errorf("empty hosts[%q].mirrors[%d].name", host.Name, j)
+			}
+		}
+	}
+
+	// Static mirrors
+	for i, m := range cfg.StaticMirrors {
+		if m.FQDN == "" {
+			return fmt.Errorf("empty static_mirrors[%d].fqdn", i)
+		}
+
+		if m.Name == "" {
+			return fmt.Errorf("empty static_mirrors[%d].name", i)
+		}
 	}
 
 	return nil

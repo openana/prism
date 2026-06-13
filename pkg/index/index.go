@@ -36,23 +36,35 @@ func (t EntryType) String() string {
 	}
 }
 
-type Entry struct {
-	Name  string
-	Size  int64
-	Mtime int64
-	Type  EntryType
+func EntryTypeFromString(s string) EntryType {
+	switch s {
+	case "file":
+		return File
+	case "directory":
+		return Directory
+	default:
+		fallthrough
+	case "other":
+		return Other
+	}
 }
 
-func (e *Entry) MarshalJSON() ([]byte, error) {
-	return json.Marshal(struct {
-		Name  string `json:"name"`
-		Type  string `json:"type"`
-		Mtime int64  `json:"mtime"`
-		Size  int64  `json:"size"`
-	}{
-		Name:  e.Name,
-		Type:  e.Type.String(),
-		Mtime: e.Mtime,
-		Size:  e.Size,
-	})
+func (t EntryType) MarshalJSON() ([]byte, error) {
+	return json.Marshal(t.String())
+}
+
+func (t *EntryType) UnmarshalJSON(v []byte) error {
+	sv := string(v)
+	if len(sv) < 2 {
+		return errors.New("payload too short")
+	}
+	*t = EntryTypeFromString(sv[1 : len(sv)-1])
+	return nil
+}
+
+type Entry struct {
+	Name  string    `json:"name"`
+	Size  int64     `json:"size"`
+	Mtime int64     `json:"mtime"`
+	Type  EntryType `json:"type"`
 }

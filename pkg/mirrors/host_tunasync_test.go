@@ -54,18 +54,18 @@ func TestTunasyncHost_FetchMirrors_ParsesTunasyncJSON(t *testing.T) {
 	if alpine.Name != "alpine" {
 		t.Errorf("alpine.Name = %q, want %q", alpine.Name, "alpine")
 	}
-	if alpine.SyncStatus == nil {
-		t.Fatal("alpine.SyncStatus is nil")
+	if alpine.Sync == nil {
+		t.Fatal("alpine.Sync is nil")
 	}
-	if alpine.SyncStatus.Status != "failed" {
-		t.Errorf("alpine.Status = %q, want %q", alpine.SyncStatus.Status, "failed")
+	if alpine.Sync.Status != Failed {
+		t.Errorf("alpine.Status = %v, want %v", alpine.Sync.Status, Failed)
 	}
 	expectedSize, _ := units.FromHumanSize("4.00T")
-	if alpine.SyncStatus.Size != expectedSize {
-		t.Errorf("alpine.Size = %d, want %d", alpine.SyncStatus.Size, expectedSize)
+	if alpine.Sync.Size != expectedSize {
+		t.Errorf("alpine.Size = %d, want %d", alpine.Sync.Size, expectedSize)
 	}
-	if alpine.SyncStatus.Upstream != "rsync://mirrors.tuna.tsinghua.edu.cn/alpine/" {
-		t.Errorf("alpine.Upstream = %q", alpine.SyncStatus.Upstream)
+	if alpine.Sync.Upstream != "rsync://mirrors.tuna.tsinghua.edu.cn/alpine/" {
+		t.Errorf("alpine.Upstream = %q", alpine.Sync.Upstream)
 	}
 
 	// centos-vault: success status.
@@ -82,8 +82,8 @@ func TestTunasyncHost_FetchMirrors_ParsesTunasyncJSON(t *testing.T) {
 	if cv == nil {
 		t.Fatal("centos-vault not found")
 	}
-	if cv.SyncStatus.Status != "success" {
-		t.Errorf("centos-vault.Status = %q, want %q", cv.SyncStatus.Status, "success")
+	if cv.Sync.Status != Success {
+		t.Errorf("centos-vault.Status = %v, want %v", cv.Sync.Status, Success)
 	}
 
 	// debian-cd: syncing status.
@@ -91,8 +91,8 @@ func TestTunasyncHost_FetchMirrors_ParsesTunasyncJSON(t *testing.T) {
 	if dc == nil {
 		t.Fatal("debian-cd not found")
 	}
-	if dc.SyncStatus.Status != "syncing" {
-		t.Errorf("debian-cd.Status = %q, want %q", dc.SyncStatus.Status, "syncing")
+	if dc.Sync.Status != Syncing {
+		t.Errorf("debian-cd.Status = %v, want %v", dc.Sync.Status, Syncing)
 	}
 
 	// homebrew-bundle.git: paused status, unknown size.
@@ -100,28 +100,28 @@ func TestTunasyncHost_FetchMirrors_ParsesTunasyncJSON(t *testing.T) {
 	if hbb == nil {
 		t.Fatal("homebrew-bundle.git not found")
 	}
-	if hbb.SyncStatus.Status != "paused" {
-		t.Errorf("homebrew-bundle.git.Status = %q, want %q", hbb.SyncStatus.Status, "paused")
+	if hbb.Sync.Status != Paused {
+		t.Errorf("homebrew-bundle.git.Status = %v, want %v", hbb.Sync.Status, Paused)
 	}
-	if hbb.SyncStatus.Size != -1 {
-		t.Errorf("homebrew-bundle.git.Size = %d, want -1 (unknown)", hbb.SyncStatus.Size)
+	if hbb.Sync.Size != -1 {
+		t.Errorf("homebrew-bundle.git.Size = %d, want -1 (unknown)", hbb.Sync.Size)
 	}
 
-	// Verify SyncStatus fields are populated on a sample mirror.
+	// Verify Sync fields are populated on a sample mirror.
 	archlinux := findMirror("archlinux")
 	if archlinux == nil {
 		t.Fatal("archlinux not found")
 	}
-	if archlinux.SyncStatus.LastUpdate == 0 {
+	if archlinux.Sync.LastUpdate == 0 {
 		t.Error("archlinux.LastUpdate is zero")
 	}
-	if archlinux.SyncStatus.LastStarted == 0 {
+	if archlinux.Sync.LastStarted == 0 {
 		t.Error("archlinux.LastStarted is zero")
 	}
-	if archlinux.SyncStatus.LastEnded == 0 {
+	if archlinux.Sync.LastEnded == 0 {
 		t.Error("archlinux.LastEnded is zero")
 	}
-	if archlinux.SyncStatus.NextSchedule == 0 {
+	if archlinux.Sync.NextSchedule == 0 {
 		t.Error("archlinux.NextSchedule is zero")
 	}
 }

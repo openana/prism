@@ -39,15 +39,15 @@ func (m *mockHost) FetchMirrors(_ context.Context) ([]Mirror, error) {
 
 // mockManagerConfig implements ManagerConfig.
 type mockManagerConfig struct {
-	hosts       []HostConfig
-	cacheTTL    time.Duration
+	hosts        []HostConfig
+	cacheTTL     time.Duration
 	fetchTimeout time.Duration
 	baseMirrors  map[string]Mirror
 }
 
-func (m mockManagerConfig) Hosts() []HostConfig        { return m.hosts }
-func (m mockManagerConfig) CacheTTL() time.Duration     { return m.cacheTTL }
-func (m mockManagerConfig) FetchTimeout() time.Duration  { return m.fetchTimeout }
+func (m mockManagerConfig) Hosts() []HostConfig            { return m.hosts }
+func (m mockManagerConfig) CacheTTL() time.Duration        { return m.cacheTTL }
+func (m mockManagerConfig) FetchTimeout() time.Duration    { return m.fetchTimeout }
 func (m mockManagerConfig) BaseMirrors() map[string]Mirror { return m.baseMirrors }
 
 // hostAsConfig adapts a Host to HostConfig for testing.
@@ -79,9 +79,9 @@ func TestManager_All_ReturnsMirrorsFromHost(t *testing.T) {
 	host := &mockHost{
 		name: "h1",
 		mirrors: []Mirror{
-			{Name: "zzz", SyncStatus: &SyncStatus{Status: "success"}},
-			{Name: "aaa", SyncStatus: &SyncStatus{Status: "failed"}},
-			{Name: "mmm", SyncStatus: &SyncStatus{Status: "syncing"}},
+			{Name: "zzz", Sync: &Sync{Status: Success}},
+			{Name: "aaa", Sync: &Sync{Status: Failed}},
+			{Name: "mmm", Sync: &Sync{Status: Syncing}},
 		},
 		called: called,
 	}
@@ -130,9 +130,9 @@ func TestManager_All_ReturnsMirrorsFromHost(t *testing.T) {
 		}
 	}
 
-	// Verify SyncStatus is preserved.
-	if mirrors[0].SyncStatus == nil || mirrors[0].SyncStatus.Status != "failed" {
-		t.Errorf("aaa.Status = %v, want 'failed'", mirrors[0].SyncStatus)
+	// Verify Sync is preserved.
+	if mirrors[0].Sync == nil || mirrors[0].Sync.Status != Failed {
+		t.Errorf("aaa.Status = %v, want 'failed'", mirrors[0].Sync)
 	}
 }
 
@@ -156,16 +156,16 @@ func TestManager_All_MergesMultipleHosts(t *testing.T) {
 	hostA := &mockHost{
 		name: "hA",
 		mirrors: []Mirror{
-			{Name: "alpine", SyncStatus: &SyncStatus{Status: "success"}},
-			{Name: "debian", SyncStatus: &SyncStatus{Status: "failed"}},
+			{Name: "alpine", Sync: &Sync{Status: Success}},
+			{Name: "debian", Sync: &Sync{Status: Failed}},
 		},
 		called: make(chan struct{}, 1),
 	}
 	hostB := &mockHost{
 		name: "hB",
 		mirrors: []Mirror{
-			{Name: "debian", SyncStatus: &SyncStatus{Status: "syncing"}},
-			{Name: "ubuntu", SyncStatus: &SyncStatus{Status: "success"}},
+			{Name: "debian", Sync: &Sync{Status: Syncing}},
+			{Name: "ubuntu", Sync: &Sync{Status: Success}},
 		},
 		called: make(chan struct{}, 1),
 	}
@@ -200,11 +200,11 @@ func TestManager_All_MergesMultipleHosts(t *testing.T) {
 	}
 
 	// Verify both hosts contributed: alpine from hostA, ubuntu from hostB.
-	if mirrors[0].SyncStatus == nil {
-		t.Error("alpine.SyncStatus is nil")
+	if mirrors[0].Sync == nil {
+		t.Error("alpine.Sync is nil")
 	}
-	if mirrors[2].SyncStatus == nil {
-		t.Error("ubuntu.SyncStatus is nil")
+	if mirrors[2].Sync == nil {
+		t.Error("ubuntu.Sync is nil")
 	}
 }
 
@@ -249,8 +249,8 @@ func TestManager_All_InjectsBaseMirrorMetadata(t *testing.T) {
 		name: "h1",
 		mirrors: []Mirror{
 			{
-				Name:       "alpine",
-				SyncStatus: &SyncStatus{Status: "success", Size: 4000},
+				Name: "alpine",
+				Sync: &Sync{Status: Success, Size: 4000},
 				// No Metadata set — base mirror should inject it.
 			},
 		},
@@ -296,12 +296,12 @@ func TestManager_All_InjectsBaseMirrorMetadata(t *testing.T) {
 		t.Errorf("alpine.Metadata.URL = %q", alpine.Metadata.URL)
 	}
 
-	// SyncStatus from the host must be preserved.
-	if alpine.SyncStatus == nil {
-		t.Fatal("alpine.SyncStatus is nil, should be preserved from host")
+	// Sync from the host must be preserved.
+	if alpine.Sync == nil {
+		t.Fatal("alpine.Sync is nil, should be preserved from host")
 	}
-	if alpine.SyncStatus.Status != "success" {
-		t.Errorf("alpine.SyncStatus.Status = %q, want %q", alpine.SyncStatus.Status, "success")
+	if alpine.Sync.Status != Success {
+		t.Errorf("alpine.Sync.Status = %v, want %v", alpine.Sync.Status, Success)
 	}
 }
 
@@ -309,7 +309,7 @@ func TestManager_All_AddsMissingBaseMirrors(t *testing.T) {
 	host := &mockHost{
 		name: "h1",
 		mirrors: []Mirror{
-			{Name: "alpine", SyncStatus: &SyncStatus{Status: "success"}},
+			{Name: "alpine", Sync: &Sync{Status: Success}},
 		},
 		called: make(chan struct{}, 1),
 	}
@@ -349,20 +349,20 @@ func TestManager_All_AddsMissingBaseMirrors(t *testing.T) {
 		t.Errorf("mirrors[1].Name = %q, want %q", mirrors[1].Name, "gentoo")
 	}
 
-	// alpine: has both SyncStatus (from host) and Metadata (from base).
-	if mirrors[0].SyncStatus == nil {
-		t.Error("alpine.SyncStatus is nil")
+	// alpine: has both Sync (from host) and Metadata (from base).
+	if mirrors[0].Sync == nil {
+		t.Error("alpine.Sync is nil")
 	}
 	if mirrors[0].Metadata == nil {
 		t.Error("alpine.Metadata is nil")
 	}
 
-	// gentoo: has Metadata (from base) but no SyncStatus (not fetched).
+	// gentoo: has Metadata (from base) but no Sync (not fetched).
 	if mirrors[1].Metadata == nil {
 		t.Error("gentoo.Metadata is nil")
 	}
-	if mirrors[1].SyncStatus != nil {
-		t.Error("gentoo.SyncStatus should be nil (not fetched from any host)")
+	if mirrors[1].Sync != nil {
+		t.Error("gentoo.Sync should be nil (not fetched from any host)")
 	}
 }
 

@@ -93,8 +93,34 @@ func (cfg *Config) ToMirrorManager() (*MirrorManager, error) {
 					Desc:    m.Desc,
 					URL:     m.URLPrefix,
 					HelpURL: helpURL,
+					Type:    mirrors.TypeFromString(m.Type),
 				},
 			}
+		}
+	}
+
+	// Static mirrors have higher precedence
+	for _, m := range cfg.StaticMirrors {
+		// Help URL
+		helpURL := ""
+		switch m.Help.Mode {
+		case "off":
+		case "auto":
+			helpURL = cfg.Misc.HelpURLPrefix + m.Name
+		case "manual":
+			helpURL = m.Help.URL
+		default:
+			return nil, fmt.Errorf("unknown static_mirrors[%q].help.mode: %q", m.Name, m.Help.Mode)
+		}
+
+		baseMirrors[m.Name] = mirrors.Mirror{
+			Name: m.Name,
+			Metadata: &mirrors.Metadata{
+				Desc:    m.Desc,
+				URL:     m.URLPrefix,
+				HelpURL: helpURL,
+				Type:    mirrors.TypeFromString(m.Type),
+			},
 		}
 	}
 
