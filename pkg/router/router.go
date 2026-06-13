@@ -242,7 +242,7 @@ func (eng *Router) HandleRequest(ctx *fasthttp.RequestCtx) {
 
 		case stateHandleStatic:
 			// TODO: static assets
-			ctx.Response.SetStatusCode(fasthttp.StatusNoContent)
+			ctx.Response.SetStatusCode(fasthttp.StatusNotImplemented)
 			state = stateEndSuccess
 			continue
 		}
@@ -271,5 +271,6 @@ func (eng *Router) handleMirrorsRequest(ctx *fasthttp.RequestCtx) {
 
 func (eng *Router) handleMirrorzRequest(ctx *fasthttp.RequestCtx) {
 	// TODO: mirrorz
-	ctx.SetStatusCode(fasthttp.StatusNoContent)
+	eng.deps.logger.Debug().Msg("mirrorz requested, not implemented")
+	ctx.SetStatusCode(fasthttp.StatusNotImplemented)
 }

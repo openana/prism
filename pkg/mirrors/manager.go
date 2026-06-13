@@ -99,6 +99,7 @@ func (mgr *Manager) All() iter.Seq[Mirror] {
 	c := mgr.cache.Load()
 
 	if time.Now().After(c.refreshAfter) {
+		mgr.deps.logger.Debug().Msg("cache stale, triggering fetch")
 		ch := mgr.sf.DoChan("fetch", func() (any, error) {
 			mgr.fetch()
 			return nil, nil
@@ -107,6 +108,7 @@ func (mgr *Manager) All() iter.Seq[Mirror] {
 		select {
 		case <-ch:
 		case <-mgr.ctx.Done():
+			mgr.deps.logger.Debug().Msg("manager context done, skipping fetch")
 		}
 	}
 
@@ -190,9 +192,11 @@ func (mgr *Manager) fetch() {
 		}
 		newCache.mirrors = oldCache.mirrors
 		newCache.sorted = oldCache.sorted
+		mgr.deps.logger.Warn().Dur("backoff", time.Until(newCache.refreshAfter)).Msg("all hosts failed, using stale cache")
 	} else {
 		mgr.backoff = mgr.cfg.initialBackoff
 		newCache.refreshAfter = time.Now().Add(mgr.cfg.cacheTTL)
+		mgr.deps.logger.Debug().Int("mirrors", len(newCache.sorted)).Msg("cache refreshed")
 	}
 	mgr.cache.Store(newCache)
 }

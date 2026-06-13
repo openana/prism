@@ -50,6 +50,7 @@ func (h *TunasyncHost) FetchMirrors(ctx context.Context) ([]Mirror, error) {
 	h.logger.Debug().Str("endpoint", h.endpoint).Msg("fetching mirrors")
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, h.endpoint, nil)
 	if err != nil {
+		h.logger.Error().Err(err).Str("endpoint", h.endpoint).Msg("request creation failed")
 		return nil, err
 	}
 
@@ -57,18 +58,21 @@ func (h *TunasyncHost) FetchMirrors(ctx context.Context) ([]Mirror, error) {
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
+		h.logger.Warn().Err(err).Str("endpoint", h.endpoint).Msg("http request failed")
 		return nil, err
 	}
 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		h.logger.Warn().Int("status", resp.StatusCode).Str("endpoint", h.endpoint).Msg("unexpected upstream status")
 		return nil, fmt.Errorf("TunasyncHost: unexpected status: %d", resp.StatusCode)
 	}
 
 	var tms []TunasyncMirror
 
 	if err := json.NewDecoder(resp.Body).Decode(&tms); err != nil {
+		h.logger.Error().Err(err).Str("endpoint", h.endpoint).Msg("json decode failed")
 		return nil, err
 	}
 
@@ -78,7 +82,7 @@ func (h *TunasyncHost) FetchMirrors(ctx context.Context) ([]Mirror, error) {
 		size, err := units.FromHumanSize(tm.Size)
 		if err != nil {
 			if tm.Size != "unknown" {
-				h.logger.Warn().Err(err).Msg("parse size error")
+				h.logger.Warn().Err(err).Str("size", tm.Size).Msg("parse size error")
 			}
 			size = -1
 		}

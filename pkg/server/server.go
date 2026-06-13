@@ -34,6 +34,7 @@ func NewServer(cfg ServerConfig, router router.Handler, logger zerolog.Logger) *
 
 	srv.router = router
 	srv.logger = logger.With().Str("module", "server.Server").Logger()
+	srv.logger.Debug().Str("listen", srv.cfg.listen).Msg("server created")
 
 	return srv
 }
@@ -57,10 +58,12 @@ func (srv *Server) Run(ctx context.Context) error {
 }
 
 func (srv *Server) Stop(ctx context.Context) error {
+	srv.logger.Debug().Msg("stopping server")
 	if err := srv.http.ShutdownWithContext(ctx); err != nil {
 		srv.logger.Warn().Err(err).Msg("http server shutdown failed")
 		return err
 	}
 
+	srv.logger.Info().Msg("server stopped")
 	return nil
 }

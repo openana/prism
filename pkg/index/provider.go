@@ -72,6 +72,7 @@ func (p *CachedProvider) AllOrErr(ctx context.Context, host string, path []byte)
 		if len(b) >= 8 && time.Unix(int64(binary.NativeEndian.Uint64(b[0:8])), 0).After(time.Now()) {
 			b = b[8:]
 			bytebufferpool.Put(key)
+			p.logger.Debug().Str("host", host).Bytes("path", path).Msg("cache hit")
 			return func(yield func(Entry) bool) {
 				defer bytebufferpool.Put(buf)
 				var e Entry
@@ -91,8 +92,11 @@ func (p *CachedProvider) AllOrErr(ctx context.Context, host string, path []byte)
 		} else {
 			// Payload is invalid
 			p.cache.Del(key.B)
+			p.logger.Debug().Str("host", host).Bytes("path", path).Msg("cache expired")
 		}
 	}
+
+	p.logger.Debug().Str("host", host).Bytes("path", path).Msg("cache miss")
 
 	// Query upstream
 	buf.Reset()
@@ -102,6 +106,7 @@ func (p *CachedProvider) AllOrErr(ctx context.Context, host string, path []byte)
 
 	f, ok := p.fetchers[host]
 	if !ok {
+		p.logger.Warn().Str("host", host).Msg("fetcher not found")
 		bytebufferpool.Put(buf)
 		bytebufferpool.Put(key)
 		return nil, ErrNotFound
@@ -109,6 +114,7 @@ func (p *CachedProvider) AllOrErr(ctx context.Context, host string, path []byte)
 
 	it, err := f.AllOrErr(ctx, path)
 	if err != nil {
+		p.logger.Warn().Err(err).Str("host", host).Bytes("path", path).Msg("upstream fetch failed")
 		bytebufferpool.Put(buf)
 		bytebufferpool.Put(key)
 		return nil, err
@@ -125,6 +131,7 @@ func (p *CachedProvider) AllOrErr(ctx context.Context, host string, path []byte)
 				stopYield = true
 			}
 		}
+		p.logger.Debug().Str("host", host).Bytes("path", path).Msg("cache stored")
 
 		p.cache.Set(key.B, buf.B)
 	}, nil

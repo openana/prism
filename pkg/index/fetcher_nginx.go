@@ -66,6 +66,7 @@ func (p *NginxFetcher) AllOrErr(ctx context.Context, path []byte) (iter.Seq[Entr
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
+		p.deps.logger.Warn().Err(err).Bytes("path", path).Msg("http request failed")
 		return nil, err
 	}
 
@@ -73,8 +74,10 @@ func (p *NginxFetcher) AllOrErr(ctx context.Context, path []byte) (iter.Seq[Entr
 
 	if resp.StatusCode != http.StatusOK {
 		if resp.StatusCode == http.StatusNotFound {
+			p.deps.logger.Debug().Bytes("path", path).Int("status", resp.StatusCode).Msg("index not found")
 			return nil, ErrNotFound
 		} else {
+			p.deps.logger.Warn().Bytes("path", path).Int("status", resp.StatusCode).Msg("unexpected upstream status")
 			return nil, ErrUpstreamFailure
 		}
 	}

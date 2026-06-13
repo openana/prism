@@ -53,8 +53,10 @@ func (rt *TrieResolver) DelRecord(prefix string) (found bool) {
 
 	if _, ok := rt.truth.routes[prefix]; ok {
 		delete(rt.truth.routes, prefix)
+		rt.logger.Debug().Str("prefix", prefix).Msg("record deleted")
 		return true
 	} else {
+		rt.logger.Debug().Str("prefix", prefix).Msg("record not found for deletion")
 		return false
 	}
 }
@@ -64,6 +66,7 @@ func (rt *TrieResolver) HasRecord(prefix string) (found bool) {
 	defer rt.truth.Unlock()
 
 	_, found = rt.truth.routes[prefix]
+	rt.logger.Debug().Str("prefix", prefix).Bool("found", found).Msg("has record")
 	return
 }
 
@@ -71,6 +74,7 @@ func (rt *TrieResolver) SetRecord(prefix string, r Record) {
 	rt.truth.Lock()
 	defer rt.truth.Unlock()
 
+	rt.logger.Debug().Str("prefix", prefix).Str("host", r.Host).Str("fqdn", r.FQDN).Msg("record set")
 	rt.truth.routes[prefix] = r
 }
 
@@ -85,6 +89,8 @@ func (rt *TrieResolver) Commit() {
 	}
 
 	trie := tb.Build()
+
+	rt.logger.Debug().Int("records", len(rt.truth.routes)).Msg("trie committed")
 	rt.trie.Store(&trie)
 }
 
