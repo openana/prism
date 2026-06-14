@@ -1,27 +1,79 @@
 package web
 
 import (
-	"bufio"
+	"embed"
 	"html/template"
+	"io/fs"
 
 	"github.com/openana/prism/pkg/index"
+	"github.com/openana/prism/pkg/meta"
 	"github.com/openana/prism/pkg/mirrors"
+	"github.com/openana/prism/pkg/web/i18n"
 	"github.com/rs/zerolog"
 	"github.com/valyala/fasthttp"
 )
 
+//go:embed templates/* static/*
+var embeddedFS embed.FS
+var templateFS fs.FS
+var staticFS fs.FS
+
+func init() {
+	var err error
+	templateFS, err = fs.Sub(embeddedFS, "templates")
+	if err != nil {
+		panic(err)
+	}
+	staticFS, err = fs.Sub(embeddedFS, "static")
+	if err != nil {
+		panic(err)
+	}
+}
+
 type Handler interface {
 	HandleMirrors(ctx *fasthttp.RequestCtx)
 	HandleDownloads(ctx *fasthttp.RequestCtx)
+	HandleDownloadsDetail(ctx *fasthttp.RequestCtx)
+	HandleStatus(ctx *fasthttp.RequestCtx)
+	HandleStatic(ctx *fasthttp.RequestCtx)
+	HandleBrowser(ctx *fasthttp.RequestCtx)
+}
+
+type Site struct {
+	Name     string
+	URL      string
+	Homepage string
+	Issues   string
+	Request  string
+	Email    string
+	Group    string
+	Disk     string
+	Note     string
+	Big      string
+}
+
+type ISODownload struct {
+	Name string
+	URL  string
+}
+
+type ISOInfo struct {
+	Distro   string
+	Category string
+	URLs     []ISODownload
 }
 
 type ServerConfig interface {
 	Site() Site
+	ISOInfo() []ISOInfo
 }
 
 type Server struct {
 	cfg struct {
-		site Site
+		site       Site
+		isoInfo    []ISOInfo
+		isoInfoIdx map[string]int
+		categories []CategoryGroup
 	}
 
 	deps struct {
@@ -31,7 +83,10 @@ type Server struct {
 	}
 
 	pages struct {
-		mirrors *template.Template
+		mirrors         *template.Template
+		status          *template.Template
+		downloads       *template.Template
+		downloadsDetail *template.Template
 	}
 }
 
@@ -39,43 +94,47 @@ func NewServer(cfg ServerConfig, mirrorGetter mirrors.Getter, indexProvider inde
 	s := &Server{}
 
 	s.cfg.site = cfg.Site()
+	s.cfg.isoInfo = cfg.ISOInfo()
+	s.cfg.isoInfoIdx = make(map[string]int, len(s.cfg.isoInfo))
+	for i, info := range s.cfg.isoInfo {
+		s.cfg.isoInfoIdx[info.Distro] = i
+	}
+	s.cfg.categories = GroupByCategory(s.cfg.isoInfo)
 
 	s.deps.mirrorGetter = mirrorGetter
 	s.deps.indexProvider = indexProvider
 	s.deps.logger = logger.With().Str("module", "web.Server").Logger()
 
 	funcMap := template.FuncMap{
-		"Site": func() *Site {
+		"site": func() *Site {
 			return &s.cfg.site
 		},
+		"version": func() string {
+			return meta.ServerName
+		},
+		"catCname": categoryCname,
 	}
 
 	parsePage := func(pageFile string) *template.Template {
-		return template.Must(template.New("").Funcs(funcMap).ParseFS(
+		return template.Must(template.New(pageFile).Funcs(funcMap).ParseFS(
 			templateFS,
-			"templates/base.html",
-			"templates/"+pageFile,
+			"base.html",
+			pageFile,
 		))
 	}
 
 	s.pages.mirrors = parsePage("mirrors.html")
+	s.pages.status = parsePage("status.html")
+	s.pages.downloads = parsePage("downloads.html")
+	s.pages.downloadsDetail = parsePage("downloads_detail.html")
 
 	return s
 }
 
-func (s *Server) HandleMirrors(ctx *fasthttp.RequestCtx) {
-	var mirrors []Mirror
-	for m := range s.deps.mirrorGetter.All() {
-		mirrors = append(mirrors, FormatMirrors(&m))
-	}
-
-	ctx.SetContentType("text/html; charset=utf-8")
-	ctx.SetBodyStreamWriter(func(w *bufio.Writer) {
-		s.pages.mirrors.ExecuteTemplate(w, "base", MirrorPage{Mirrors: mirrors})
-		w.Flush()
-	})
+func (s *Server) resolveLocale(ctx *fasthttp.RequestCtx) *i18n.Locale {
+	return i18n.Resolve(string(ctx.Request.Header.Peek("Accept-Language")))
 }
 
-func (s *Server) HandleDownloads(ctx *fasthttp.RequestCtx) {
+func (s *Server) HandleBrowser(ctx *fasthttp.RequestCtx) {
 	ctx.SetStatusCode(fasthttp.StatusNotImplemented)
 }

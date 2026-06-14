@@ -61,8 +61,10 @@ func NewRouter(cfg RouterConfig, logger zerolog.Logger, accessLogger log.AccessL
 
 	// Page routes
 	r.GET("/", rt.handleRootRedirect)
+	r.GET("/status", rt.deps.webHandler.HandleStatus)
 	r.GET("/mirrors", rt.deps.webHandler.HandleMirrors)
 	r.GET("/downloads", rt.deps.webHandler.HandleDownloads)
+	r.GET("/downloads/{distro}", rt.deps.webHandler.HandleDownloadsDetail)
 
 	// API routes
 	r.GET("/api/ping", rt.handlePing)
@@ -71,10 +73,10 @@ func NewRouter(cfg RouterConfig, logger zerolog.Logger, accessLogger log.AccessL
 	r.GET("/api/mirrorz", rt.handleMirrorzRequest)
 	r.HEAD("/api/mirrorz", rt.handleMirrorzHead)
 
-	// Static assets are not implemented yet; return 501 for all methods.
-	r.ANY("/static/{filepath:*}", rt.handleStatic)
+	// Static assets
+	r.ANY("/static/{path:*}", rt.deps.webHandler.HandleStatic)
 
-	// Catch-all: redirect everything else
+	// Redirect
 	r.ANY("/{path:*}", rt.handleRedirect)
 
 	rt.r = r
@@ -174,10 +176,6 @@ func (rt *Router) handleRedirect(ctx *fasthttp.RequestCtx) {
 	uri.SetHost(record.FQDN)
 
 	ctx.RedirectBytes(uri.FullURI(), fasthttp.StatusMovedPermanently)
-}
-
-func (rt *Router) handleStatic(ctx *fasthttp.RequestCtx) {
-	ctx.Response.SetStatusCode(fasthttp.StatusNotImplemented)
 }
 
 func (rt *Router) handleMirrorsRequest(ctx *fasthttp.RequestCtx) {

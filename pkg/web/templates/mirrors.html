@@ -1,23 +1,26 @@
 {{ define "content" }}
 <div class="overflow-auto">
+    <hgroup>
+        <h2>{{ .Locale.T "mirrors.title" }}</h2>
+    </hgroup>
     <table class="striped" id="mirror-table">
         <thead>
             <tr>
-                <th>Name</th>
-                <th>Description</th>
-                <th>Type</th>
-                <th>LastUpdate</th>
-                <th>Help</th>
+                <th>{{ .Locale.T "mirrors.th_name" }}</th>
+                <th>{{ .Locale.T "mirrors.th_description" }}</th>
+                <th>{{ .Locale.T "mirrors.th_type" }}</th>
+                <th>{{ .Locale.T "mirrors.th_last_update" }}</th>
+                <th>{{ .Locale.T "mirrors.th_help" }}</th>
             </tr>
         </thead>
         <tbody>
             {{ range .Mirrors }}
             <tr>
                 <td>{{ if .URL }}<a href="{{ .URL }}">{{ .Name }}</a>{{ else }}{{ .Name }}{{ end }}</td>
-                <td>{{ if .Desc }}{{ .Desc }}{{ else }}N/A{{ end }}</td>
-                <td>{{ if .Type }}{{ .Type }}{{ else }}N/A{{ end }}</td>
-                <td>{{ if .LastUpdate }}{{ .LastUpdate }}{{ else }}N/A{{ end }}</td>
-                <td>{{ if .Help }}<a href="{{ .Help }}">help</a>{{ else }}N/A{{ end }}</td>
+                <td>{{ if .Desc }}{{ .Desc }}{{ else }}{{ $.Locale.T "mirrors.na" }}{{ end }}</td>
+                <td>{{ if .Type }}{{ .Type }}{{ else }}{{ $.Locale.T "mirrors.na" }}{{ end }}</td>
+                <td>{{ if .LastUpdate }}{{ .LastUpdate }}{{ else }}{{ $.Locale.T "mirrors.na" }}{{ end }}</td>
+                <td>{{ if .Help }}<a href="{{ .Help }}">{{ $.Locale.T "mirrors.help_link" }}</a>{{ else }}{{ $.Locale.T "mirrors.na" }}{{ end }}</td>
             </tr>
             {{ end }}
         </tbody>

@@ -1,15 +1,25 @@
 {{ define "base" }}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ .Locale.Lang }}">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark">
-    <title>{{ (Site).Name }}</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <title>{{ (site).Name }}</title>
+    <link rel="stylesheet" href="/static/pico.min.fbc9a63f.css">
     <style>
         #mirror-table {
+            font-family: monospace;
+            font-size: .9em;
+        }
+
+        #status-table {
+            font-family: monospace;
+            font-size: .9em;
+        }
+
+        #downloads-table {
             font-family: monospace;
             font-size: .9em;
         }
@@ -17,6 +27,42 @@
         th,
         td {
             white-space: nowrap;
+        }
+
+        #links {
+            text-align: center;
+            margin-bottom: 10px;
+            clear: both;
+        }
+
+        #links a {
+            margin: 0px 10px;
+            font-size: 0.9em;
+        }
+
+        #version {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            font-family: monospace;
+        }
+
+        /* status row colors — light scheme */
+        #status-table tbody tr.status-failed td,
+        #status-table tbody tr.status-failed th  { background-color: #FAEEEB; }
+        #status-table tbody tr.status-syncing td,
+        #status-table tbody tr.status-syncing th { background-color: #E9F2FC; }
+        #status-table tbody tr.status-paused td,
+        #status-table tbody tr.status-paused th  { background-color: #FDF1B4; }
+
+        /* status row colors — dark scheme */
+        @media (prefers-color-scheme: dark) {
+            #status-table tbody tr.status-failed td,
+            #status-table tbody tr.status-failed th  { background-color: #45150C; }
+            #status-table tbody tr.status-syncing td,
+            #status-table tbody tr.status-syncing th { background-color: #052940; }
+            #status-table tbody tr.status-paused td,
+            #status-table tbody tr.status-paused th  { background-color: #2B2600; }
         }
     </style>
 </head>
@@ -27,13 +73,13 @@
         <nav>
             <ul>
                 <li>
-                    <strong><a href="{{ (Site).URL }}" class="contrast">{{ (Site).Name }}</a></strong>
+                    <strong><a href="{{ (site).URL }}" class="contrast">{{ (site).Name }}</a></strong>
                 </li>
             </ul>
             <ul>
-                <li><a href="/mirrors" class="secondary">Mirrors</a></li>
-                <li><a href="/downloads" class="secondary">Downloads</a></li>
-                <li><a href="/status" class="secondary">Status</a></li>
+                <li><a href="/mirrors" class="secondary">{{ .Locale.T "nav.mirrors" }}</a></li>
+                <li><a href="/downloads" class="secondary">{{ .Locale.T "nav.downloads" }}</a></li>
+                <li><a href="/status" class="secondary">{{ .Locale.T "nav.status" }}</a></li>
             </ul>
         </nav>
     </header>
@@ -43,31 +89,24 @@
     </main>
 
     <footer>
-        <div>
-            {{ if (Site).Homepage -}}
-            <a href="{{ (Site).Homepage }}">Homepage</a>
-            {{- end }}
-            {{ if (Site).Issues -}}
-            <a href="{{ (Site).Issues }}">Report Issues</a>
-            {{- end }}
-            {{ if (Site).Request -}}
-            <a href="{{ (Site).Request }}">Request Mirrors</a>
-            {{- end }}
-            {{ if (Site).Email -}}
-            <a href="mailto:{{ (Site).Email }}">Email</a>
-            {{- end }}
-            {{ if (Site).Group -}}
-            <a>IM Group: {{ (Site).Group }}</a>
-            {{- end }}
-            {{ if (Site).Disk -}}
-            <a>Storage Usage: {{ (Site).Disk }}</a>
-            {{- end }}
-            {{ if (Site).Note -}}
-            <a>Note: {{ (Site).Note }}</a>
-            {{- end }}
-            {{ if (Site).Big -}}
-            <a href="{{ (Site).Big }}">Big File</a>
-            {{- end }}
+        <div class="container">
+            <section id="links">
+                {{ if (site).Homepage -}}
+                <a class="secondary" href="{{ (site).Homepage }}">{{ .Locale.T "footer.homepage" }}</a>
+                {{- end }}
+                {{ if (site).Issues -}}
+                <a class="secondary" href="{{ (site).Issues }}">{{ .Locale.T "footer.report_issues" }}</a>
+                {{- end }}
+                {{ if (site).Request -}}
+                <a class="secondary" href="{{ (site).Request }}">{{ .Locale.T "footer.request_mirrors" }}</a>
+                {{- end }}
+                {{ if (site).Email -}}
+                <a class="secondary" href="mailto:{{ (site).Email }}">{{ .Locale.T "footer.email" }}</a>
+                {{- end }}
+            </section>
+            <section id="version">
+                {{ .Locale.T "footer.powered_by" (version) }}
+            </section>
         </div>
     </footer>
 

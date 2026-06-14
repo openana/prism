@@ -13,3 +13,5 @@
 - [ ] Benchmarks and pprof
 - [ ] Test with mocked file server and tunasync
 
+## Credits
+[Pico CSS](https://github.com/picocss/pico): MIT.

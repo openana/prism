@@ -1,34 +1,37 @@
 {{ define "content" }}
 <div class="overflow-auto">
-    <table class="striped" id="mirror-table">
+    <hgroup>
+        <h2>{{ .Locale.T "status.title" }}</h2>
+    </hgroup>
+    <table class="striped" id="status-table">
         <thead>
             <tr>
-                <th>Name</th>
-                <th>Type</th>
-                <th>Help</th>
-                <th>Upstream</th>
-                <th>Size</th>
-                <th>Status</th>
-                <th>LastUpdate</th>
-                <th>LastStarted</th>
-                <th>LastEnded</th>
-                <th>NextSchedule</th>
+                <th>{{ .Locale.T "status.th_name" }}</th>
+                <th>{{ .Locale.T "status.th_type" }}</th>
+                <th>{{ .Locale.T "status.th_last_update" }}</th>
+                <th>{{ .Locale.T "status.th_last_started" }}</th>
+                <th>{{ .Locale.T "status.th_last_ended" }}</th>
+                <th>{{ .Locale.T "status.th_next_schedule" }}</th>
+                <th>{{ .Locale.T "status.th_upstream" }}</th>
+                <th>{{ .Locale.T "status.th_status" }}</th>
+                <th>{{ .Locale.T "status.th_size" }}</th>
             </tr>
         </thead>
         <tbody>
             {{ range .Mirrors }}
-            <tr>
-                <td>{{ if .URL }}<a href="{{ .URL }}">{{ .Name }}</a>{{ else }}{{ .Name }}{{ end }}</td>
-                <td>{{ if .Type }}{{ .Type }}{{ else }}N/A{{ end }}</td>
-                <td>{{ if .Help }}<a href="{{ .Help }}">help</a>{{ else }}N/A{{ end }}</td>
-                <td>{{ if .Upstream }}{{ .Upstream }}{{ else }}N/A{{ end }}</td>
-                <td>{{ if .Size }}{{ .Size }}{{ else }}N/A{{ end }}</td>
-                <td>{{ if .Status }}{{ .Status }}{{ else }}N/A{{ end }}</td>
-                <td>{{ if .LastUpdate }}{{ .LastUpdate }}{{ else }}N/A{{ end }}</td>
-                <td>{{ if .LastStarted }}{{ .LastStarted }}{{ else }}N/A{{ end }}</td>
-                <td>{{ if .LastEnded }}{{ .LastEnded }}{{ else }}N/A{{ end }}</td>
-                <td>{{ if .NextSchedule }}{{ .NextSchedule }}{{ else }}N/A{{ end }}</td>
+            {{ if .Name }}
+            <tr class="{{ .StatusClass }}">
+                <td>{{ .Name }}</td>
+                <td>{{ if .Type }}{{ .Type }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
+                <td>{{ if .LastUpdate }}{{ .LastUpdate }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
+                <td>{{ if .LastStarted }}{{ .LastStarted }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
+                <td>{{ if .LastEnded }}{{ .LastEnded }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
+                <td>{{ if .NextSchedule }}{{ .NextSchedule }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
+                <td>{{ if .Upstream }}{{ .Upstream }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
+                <td>{{ if .Status }}{{ .Status }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
+                <td>{{ if .Size }}{{ .Size }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
             </tr>
+            {{ end }}
             {{ end }}
         </tbody>
     </table>

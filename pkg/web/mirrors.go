@@ -1,9 +1,12 @@
 package web
 
 import (
+	"bufio"
 	"time"
 
 	"github.com/openana/prism/pkg/mirrors"
+	"github.com/openana/prism/pkg/web/i18n"
+	"github.com/valyala/fasthttp"
 )
 
 type Mirror struct {
@@ -35,5 +38,21 @@ func FormatMirrors(src *mirrors.Mirror) Mirror {
 }
 
 type MirrorPage struct {
+	Locale  *i18n.Locale
 	Mirrors []Mirror
+}
+
+func (s *Server) HandleMirrors(ctx *fasthttp.RequestCtx) {
+	var mirrors []Mirror
+	for m := range s.deps.mirrorGetter.All() {
+		mirrors = append(mirrors, FormatMirrors(&m))
+	}
+
+	ctx.SetContentType("text/html; charset=utf-8")
+	ctx.SetBodyStreamWriter(func(w *bufio.Writer) {
+		if err := s.pages.mirrors.ExecuteTemplate(w, "base", MirrorPage{Locale: s.resolveLocale(ctx), Mirrors: mirrors}); err != nil {
+			s.deps.logger.Error().Err(err).Msg("failed to render template")
+		}
+		w.Flush()
+	})
 }

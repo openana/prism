@@ -1,0 +1,26 @@
+{{ define "content" }}
+<div class="overflow-auto">
+    <hgroup>
+        <h2>{{ .Locale.T "downloads.title" }}</h2>
+    </hgroup>
+    {{ range .Categories }}
+    <hgroup>
+        <h3>{{ .Category | catCname }}</h3>
+    </hgroup>
+    <table class="striped" id="downloads-table">
+        <thead>
+            <tr>
+                <th>{{ $.Locale.T "downloads.th_distro" }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{ range .Distros }}
+            <tr>
+                <td><a href="/downloads/{{ . }}">{{ . }}</a></td>
+            </tr>
+            {{ end }}
+        </tbody>
+    </table>
+    {{ end }}
+</div>
+{{ end }}
