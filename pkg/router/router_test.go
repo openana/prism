@@ -14,6 +14,7 @@ import (
 	"github.com/openana/prism/pkg/log"
 	"github.com/openana/prism/pkg/mirrors"
 	purl "github.com/openana/prism/pkg/url"
+	"github.com/openana/prism/pkg/web"
 	"github.com/rs/zerolog"
 	"github.com/valyala/fasthttp"
 )
@@ -77,12 +78,30 @@ func (p stubProvider) AllOrErr(_ context.Context, _ string, _ []byte) (iter.Seq[
 	}, nil
 }
 
+// stubWebHandler implements web.Handler.
+type stubWebHandler struct {
+	mirrorsStatus   int
+	mirrorsBody     string
+	downloadsStatus int
+	downloadsBody   string
+}
+
+func (h stubWebHandler) HandleMirrors(ctx *fasthttp.RequestCtx) {
+	ctx.SetStatusCode(h.mirrorsStatus)
+	ctx.SetBodyString(h.mirrorsBody)
+}
+
+func (h stubWebHandler) HandleDownloads(ctx *fasthttp.RequestCtx) {
+	ctx.SetStatusCode(h.downloadsStatus)
+	ctx.SetBodyString(h.downloadsBody)
+}
+
 // --- Helpers ---
 
-func newTestRouter(resolver purl.Resolver, getter mirrors.Getter, provider index.Provider) *Router {
+func newTestRouter(resolver purl.Resolver, getter mirrors.Getter, provider index.Provider, webHandler web.Handler) *Router {
 	cfg := stubRouterConfig{protoHeader: "X-Forwarded-Proto"}
 	discard := zerolog.New(io.Discard)
-	return NewRouter(cfg, discard, log.AccessLogger(discard), resolver, getter, provider)
+	return NewRouter(cfg, discard, log.AccessLogger(discard), resolver, getter, provider, webHandler)
 }
 
 func okResolver() stubResolver {
@@ -135,7 +154,7 @@ func assertStatusAndBodyContains(t *testing.T, ctx *fasthttp.RequestCtx, wantSta
 // --- Phase 1: Tracer bullet — Redirect happy path ---
 
 func TestRouter_Redirect_ResolverOK(t *testing.T) {
-	router := newTestRouter(okResolver(), stubGetter{}, stubProvider{})
+	router := newTestRouter(okResolver(), stubGetter{}, stubProvider{}, stubWebHandler{})
 
 	var ctx fasthttp.RequestCtx
 	ctx.Request.SetRequestURI("/ubuntu/pool/main/x86_64/somefile.rpm")
@@ -155,7 +174,7 @@ func TestRouter_Index_Success(t *testing.T) {
 			{Name: "dir1", Size: 0, Mtime: 1700000001, Type: index.Directory},
 		},
 	}
-	router := newTestRouter(okResolver(), stubGetter{}, provider)
+	router := newTestRouter(okResolver(), stubGetter{}, provider, stubWebHandler{})
 
 	var ctx fasthttp.RequestCtx
 	ctx.Request.SetRequestURI("/api/index?path=%2Falpine%2F")
@@ -217,7 +236,7 @@ func TestRouter_Index_Errors(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			provider := stubProvider{err: tt.err}
-			router := newTestRouter(tt.resolver, stubGetter{}, provider)
+			router := newTestRouter(tt.resolver, stubGetter{}, provider, stubWebHandler{})
 
 			var ctx fasthttp.RequestCtx
 			ctx.Request.SetRequestURI("/api/index?path=%2Falpine%2F")
@@ -238,7 +257,7 @@ func TestRouter_Mirrors_Success(t *testing.T) {
 			{Name: "ubuntu", Metadata: &mirrors.Metadata{Desc: "Ubuntu Linux"}},
 		},
 	}
-	router := newTestRouter(stubResolver{ok: false}, getter, stubProvider{})
+	router := newTestRouter(stubResolver{ok: false}, getter, stubProvider{}, stubWebHandler{})
 
 	var ctx fasthttp.RequestCtx
 	ctx.Request.SetRequestURI("/api/mirrors")
@@ -261,7 +280,7 @@ func TestRouter_Mirrors_Success(t *testing.T) {
 
 func TestRouter_Mirrors_Empty(t *testing.T) {
 	getter := stubGetter{}
-	router := newTestRouter(stubResolver{ok: false}, getter, stubProvider{})
+	router := newTestRouter(stubResolver{ok: false}, getter, stubProvider{}, stubWebHandler{})
 
 	var ctx fasthttp.RequestCtx
 	ctx.Request.SetRequestURI("/api/mirrors")
@@ -285,7 +304,7 @@ func TestRouter_Mirrorz_Success(t *testing.T) {
 	mz := &mirrors.Mirrorz{
 		Version: mirrors.MzVersion,
 		Site: mirrors.Site{
-			Url:  "https://example.org",
+			URL:  "https://example.org",
 			Abbr: "EXAMPLE",
 		},
 		Mirrors: []mirrors.MirrorzEntry{
@@ -293,7 +312,7 @@ func TestRouter_Mirrorz_Success(t *testing.T) {
 		},
 	}
 	getter := stubGetter{mirrorz: mz}
-	router := newTestRouter(stubResolver{ok: false}, getter, stubProvider{})
+	router := newTestRouter(stubResolver{ok: false}, getter, stubProvider{}, stubWebHandler{})
 
 	var ctx fasthttp.RequestCtx
 	ctx.Request.SetRequestURI("/api/mirrorz")
@@ -322,7 +341,7 @@ func TestRouter_Mirrorz_HEAD(t *testing.T) {
 		mirrorz:    nil, // would panic if Mirrorz() were called
 		mirrorzErr: nil,
 	}
-	router := newTestRouter(stubResolver{ok: false}, getter, stubProvider{})
+	router := newTestRouter(stubResolver{ok: false}, getter, stubProvider{}, stubWebHandler{})
 
 	var ctx fasthttp.RequestCtx
 	ctx.Request.SetRequestURI("/api/mirrorz")
@@ -340,7 +359,7 @@ func TestRouter_Mirrorz_HEAD(t *testing.T) {
 
 func TestRouter_Mirrorz_Error(t *testing.T) {
 	getter := stubGetter{mirrorzErr: io.ErrUnexpectedEOF}
-	router := newTestRouter(stubResolver{ok: false}, getter, stubProvider{})
+	router := newTestRouter(stubResolver{ok: false}, getter, stubProvider{}, stubWebHandler{})
 
 	var ctx fasthttp.RequestCtx
 	ctx.Request.SetRequestURI("/api/mirrorz")
@@ -353,9 +372,9 @@ func TestRouter_Mirrorz_Error(t *testing.T) {
 
 func TestRouter_Mirrorz_Empty(t *testing.T) {
 	getter := stubGetter{mirrorz: &mirrors.Mirrorz{
-		Site: mirrors.Site{Url: "https://example.org", Abbr: "EX"},
+		Site: mirrors.Site{URL: "https://example.org", Abbr: "EX"},
 	}}
-	router := newTestRouter(stubResolver{ok: false}, getter, stubProvider{})
+	router := newTestRouter(stubResolver{ok: false}, getter, stubProvider{}, stubWebHandler{})
 
 	var ctx fasthttp.RequestCtx
 	ctx.Request.SetRequestURI("/api/mirrorz")
@@ -371,12 +390,62 @@ func TestRouter_Mirrorz_Empty(t *testing.T) {
 	}
 }
 
-// --- Phase 4: Error paths ---
+// --- Phase 4: Pages routes ---
+
+func TestRouter_Pages_Mirrors_Success(t *testing.T) {
+	wh := stubWebHandler{
+		mirrorsStatus: fasthttp.StatusOK,
+		mirrorsBody:   "<html>mirrors page</html>",
+	}
+	router := newTestRouter(stubResolver{ok: false}, stubGetter{}, stubProvider{}, wh)
+
+	var ctx fasthttp.RequestCtx
+	ctx.Request.SetRequestURI("/pages/mirrors")
+
+	router.HandleRequest(&ctx)
+
+	if got := ctx.Response.StatusCode(); got != fasthttp.StatusOK {
+		t.Fatalf("expected status %d, got %d", fasthttp.StatusOK, got)
+	}
+	if got := string(ctx.Response.Body()); got != "<html>mirrors page</html>" {
+		t.Errorf("expected mirrors page body, got %q", got)
+	}
+}
+
+func TestRouter_Pages_Downloads(t *testing.T) {
+	wh := stubWebHandler{
+		downloadsStatus: fasthttp.StatusNotImplemented,
+		downloadsBody:   "",
+	}
+	router := newTestRouter(stubResolver{ok: false}, stubGetter{}, stubProvider{}, wh)
+
+	var ctx fasthttp.RequestCtx
+	ctx.Request.SetRequestURI("/pages/downloads")
+
+	router.HandleRequest(&ctx)
+
+	if got := ctx.Response.StatusCode(); got != fasthttp.StatusNotImplemented {
+		t.Fatalf("expected status %d, got %d", fasthttp.StatusNotImplemented, got)
+	}
+}
+
+func TestRouter_Pages_NotFound(t *testing.T) {
+	router := newTestRouter(stubResolver{ok: false}, stubGetter{}, stubProvider{}, stubWebHandler{})
+
+	var ctx fasthttp.RequestCtx
+	ctx.Request.SetRequestURI("/pages/nonexistent")
+
+	router.HandleRequest(&ctx)
+
+	assertStatusAndBodyContains(t, &ctx, fasthttp.StatusNotFound, "page not found")
+}
+
+// --- Phase 5: Error paths ---
 
 // TestRouter_RootPath_RedirectFails verifies that requesting "/" falls through
 // to the redirect handler, which fails when the resolver has no match.
 func TestRouter_RootPath_RedirectFails(t *testing.T) {
-	router := newTestRouter(stubResolver{ok: false}, stubGetter{}, stubProvider{})
+	router := newTestRouter(stubResolver{ok: false}, stubGetter{}, stubProvider{}, stubWebHandler{})
 
 	var ctx fasthttp.RequestCtx
 	ctx.Request.SetRequestURI("/")
@@ -388,7 +457,7 @@ func TestRouter_RootPath_RedirectFails(t *testing.T) {
 }
 
 func TestRouter_InvalidAPI(t *testing.T) {
-	router := newTestRouter(stubResolver{ok: false}, stubGetter{}, stubProvider{})
+	router := newTestRouter(stubResolver{ok: false}, stubGetter{}, stubProvider{}, stubWebHandler{})
 
 	var ctx fasthttp.RequestCtx
 	ctx.Request.SetRequestURI("/api/nonexistent")
@@ -414,7 +483,7 @@ func TestRouter_Redirect_ProtoSniffing(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			router := newTestRouter(okResolver(), stubGetter{}, stubProvider{})
+			router := newTestRouter(okResolver(), stubGetter{}, stubProvider{}, stubWebHandler{})
 
 			var ctx fasthttp.RequestCtx
 			ctx.Request.SetRequestURI(path)
@@ -428,7 +497,7 @@ func TestRouter_Redirect_ProtoSniffing(t *testing.T) {
 }
 
 func TestRouter_Static(t *testing.T) {
-	router := newTestRouter(stubResolver{ok: false}, stubGetter{}, stubProvider{})
+	router := newTestRouter(stubResolver{ok: false}, stubGetter{}, stubProvider{}, stubWebHandler{})
 
 	var ctx fasthttp.RequestCtx
 	ctx.Request.SetRequestURI("/static/app.js")

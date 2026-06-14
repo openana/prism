@@ -10,6 +10,7 @@ import (
 	"github.com/openana/prism/pkg/log"
 	"github.com/openana/prism/pkg/mirrors"
 	"github.com/openana/prism/pkg/router"
+	"github.com/openana/prism/pkg/web"
 
 	purl "github.com/openana/prism/pkg/url"
 )
@@ -26,6 +27,7 @@ func InitializeServer(cfg *config.Config) (*Server, func(), error) {
 		ProvideTrieResolverConfig,
 		ProvideMirrorManagerConfig,
 		ProvideCachedIndexProviderConfig,
+		ProvideWebServerConfig,
 
 		// Modules
 		purl.URLSet,
@@ -33,6 +35,7 @@ func InitializeServer(cfg *config.Config) (*Server, func(), error) {
 		mirrors.MirrorSet,
 		log.LogSet,
 		index.IndexSet,
+		web.WebSet,
 	)
 	return nil, nil, nil
 }
@@ -63,4 +66,8 @@ func ProvideMirrorManagerConfig(cfg *config.Config) (mirrors.ManagerConfig, erro
 
 func ProvideCachedIndexProviderConfig(cfg *config.Config) (index.CachedProviderConfig, error) {
 	return cfg.ToCachedProvider()
+}
+
+func ProvideWebServerConfig(cfg *config.Config) web.ServerConfig {
+	return cfg.ToWebServer()
 }

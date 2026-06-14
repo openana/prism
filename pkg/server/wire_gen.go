@@ -13,6 +13,7 @@ import (
 	"github.com/openana/prism/pkg/mirrors"
 	"github.com/openana/prism/pkg/router"
 	"github.com/openana/prism/pkg/url"
+	"github.com/openana/prism/pkg/web"
 )
 
 // Injectors from wire.go:
@@ -72,9 +73,11 @@ func InitializeServer(cfg *config.Config) (*Server, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	routerRouter := router.NewRouter(routerConfig, logger, accessLogger, trieResolver, manager, cachedProvider)
-	server := NewServer(serverConfig, routerRouter, logger)
-	return server, func() {
+	webServerConfig := ProvideWebServerConfig(cfg)
+	server := web.NewServer(webServerConfig, manager, cachedProvider, logger)
+	routerRouter := router.NewRouter(routerConfig, logger, accessLogger, trieResolver, manager, cachedProvider, server)
+	serverServer := NewServer(serverConfig, routerRouter, logger)
+	return serverServer, func() {
 		cleanup3()
 		cleanup2()
 		cleanup()
@@ -109,4 +112,8 @@ func ProvideMirrorManagerConfig(cfg *config.Config) (mirrors.ManagerConfig, erro
 
 func ProvideCachedIndexProviderConfig(cfg *config.Config) (index.CachedProviderConfig, error) {
 	return cfg.ToCachedProvider()
+}
+
+func ProvideWebServerConfig(cfg *config.Config) web.ServerConfig {
+	return cfg.ToWebServer()
 }

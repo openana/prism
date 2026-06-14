@@ -10,6 +10,7 @@ import (
 	"github.com/openana/prism/pkg/log"
 	"github.com/openana/prism/pkg/mirrors"
 	purl "github.com/openana/prism/pkg/url"
+	"github.com/openana/prism/pkg/web"
 	"github.com/rs/zerolog"
 	"github.com/valyala/bytebufferpool"
 	"github.com/valyala/fasthttp"
@@ -35,10 +36,11 @@ type Router struct {
 		pathResolver  purl.Resolver
 		mirrorGetter  mirrors.Getter
 		indexProvider index.Provider
+		webHandler    web.Handler
 	}
 }
 
-func NewRouter(cfg RouterConfig, logger zerolog.Logger, accessLogger log.AccessLogger, pathResolver purl.Resolver, mirrorGetter mirrors.Getter, indexProvider index.Provider) *Router {
+func NewRouter(cfg RouterConfig, logger zerolog.Logger, accessLogger log.AccessLogger, pathResolver purl.Resolver, mirrorGetter mirrors.Getter, indexProvider index.Provider, webHandler web.Handler) *Router {
 	eng := &Router{}
 
 	eng.cfg.protoHeader = cfg.ProtoHeader()
@@ -48,6 +50,7 @@ func NewRouter(cfg RouterConfig, logger zerolog.Logger, accessLogger log.AccessL
 	eng.deps.pathResolver = pathResolver
 	eng.deps.mirrorGetter = mirrorGetter
 	eng.deps.indexProvider = indexProvider
+	eng.deps.webHandler = webHandler
 
 	return eng
 }
@@ -56,6 +59,12 @@ var (
 	// "/"
 	pathAPI    = []byte("api/")
 	pathStatic = []byte("static/")
+	pathPages  = []byte("pages/")
+
+	// "pages/"
+	pathMirrorsPage   = []byte("mirrors")
+	pathDownloadsPage = []byte("downloads")
+
 	// "api/"
 	pathPing    = []byte("ping")
 	pathIndex   = []byte("index")
@@ -75,6 +84,7 @@ const (
 	stateHandleIndex
 	stateHandleRedirect
 	stateHandleStatic
+	stateHandlePages
 )
 
 func (eng *Router) HandleRequest(ctx *fasthttp.RequestCtx) {
@@ -114,6 +124,12 @@ func (eng *Router) HandleRequest(ctx *fasthttp.RequestCtx) {
 			if bytes.HasPrefix(path, pathAPI) {
 				path = path[4:]
 				state = stateHandleAPI
+				continue
+			}
+
+			if bytes.HasPrefix(path, pathPages) {
+				path = path[6:]
+				state = stateHandlePages
 				continue
 			}
 
@@ -244,6 +260,24 @@ func (eng *Router) HandleRequest(ctx *fasthttp.RequestCtx) {
 			// TODO: static assets
 			ctx.Response.SetStatusCode(fasthttp.StatusNotImplemented)
 			state = stateEndSuccess
+			continue
+
+		case stateHandlePages:
+			if bytes.Equal(path, pathMirrorsPage) {
+				eng.deps.webHandler.HandleMirrors(ctx)
+				state = stateEndSuccess
+				continue
+			}
+
+			if bytes.Equal(path, pathDownloadsPage) {
+				eng.deps.webHandler.HandleDownloads(ctx)
+				state = stateEndSuccess
+				continue
+			}
+
+			errMsg = "page not found"
+			errStatus = fasthttp.StatusNotFound
+			state = stateEndFail
 			continue
 		}
 	}

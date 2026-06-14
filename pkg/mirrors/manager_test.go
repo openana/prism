@@ -534,7 +534,7 @@ func TestManager_Mirrorz_ReturnsMirrorzWithSync(t *testing.T) {
 		},
 	}
 
-	site := Site{Url: "https://example.org", Abbr: "EX"}
+	site := Site{URL: "https://example.org", Abbr: "EX"}
 	mgr, cancel := newTestManagerWithMirrorz(
 		[]Host{host},
 		500*time.Second, // Cache is fresh, but Mirrorz() ignores TTL
@@ -551,8 +551,8 @@ func TestManager_Mirrorz_ReturnsMirrorzWithSync(t *testing.T) {
 		t.Fatalf("Mirrorz() unexpected error: %v", err)
 	}
 
-	if mz.Site.Url != "https://example.org" {
-		t.Errorf("Site.Url = %q", mz.Site.Url)
+	if mz.Site.URL != "https://example.org" {
+		t.Errorf("Site.URL = %q", mz.Site.URL)
 	}
 	if len(mz.Info) != 1 || mz.Info[0].Distro != "Alpine" {
 		t.Errorf("Info = %+v", mz.Info)
@@ -568,8 +568,8 @@ func TestManager_Mirrorz_ReturnsMirrorzWithSync(t *testing.T) {
 	if m.Desc != "Alpine Linux" {
 		t.Errorf("Desc = %q", m.Desc)
 	}
-	if m.Url != "/alpine" {
-		t.Errorf("Url = %q", m.Url)
+	if m.URL != "/alpine" {
+		t.Errorf("URL = %q", m.URL)
 	}
 	if m.Help != "/help/alpine" {
 		t.Errorf("Help = %q", m.Help)
@@ -601,7 +601,7 @@ func TestManager_Mirrorz_DisableWhenNoSync(t *testing.T) {
 		},
 	}
 
-	site := Site{Url: "https://example.org", Abbr: "EX"}
+	site := Site{URL: "https://example.org", Abbr: "EX"}
 	mgr, cancel := newTestManagerWithMirrorz(
 		[]Host{host},
 		500*time.Second,
@@ -640,7 +640,7 @@ func TestManager_Mirrorz_RespectsCacheTTL(t *testing.T) {
 		mirrors: []Mirror{{Name: "alpine"}},
 	}
 
-	site := Site{Url: "https://example.org", Abbr: "EX"}
+	site := Site{URL: "https://example.org", Abbr: "EX"}
 	mgr, cancel := newTestManagerWithMirrorz(
 		[]Host{host},
 		500*time.Second, // Long TTL: cache stays fresh
@@ -677,7 +677,7 @@ func TestManager_Mirrorz_EmptyMirrors(t *testing.T) {
 		mirrors: []Mirror{},
 	}
 
-	site := Site{Url: "https://example.org", Abbr: "EX"}
+	site := Site{URL: "https://example.org", Abbr: "EX"}
 	mgr, cancel := newTestManagerWithMirrorz(
 		[]Host{host},
 		0,

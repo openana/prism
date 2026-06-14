@@ -144,41 +144,41 @@ func (cfg *Config) ToMirrorManager() (*MirrorManager, error) {
 		}
 	}
 
-	// Mirrorz site
+	// Site
 	var mirrorzSite *mirrors.Site
-	if cfg.Mirrorz.Site.Url != "" || cfg.Mirrorz.Site.Abbr != "" {
+	if cfg.Site.URL != "" || cfg.Site.Abbr != "" {
 		mirrorzSite = &mirrors.Site{
-			Url:          cfg.Mirrorz.Site.Url,
-			Logo:         cfg.Mirrorz.Site.Logo,
-			LogoDarkmode: cfg.Mirrorz.Site.LogoDarkmode,
-			Abbr:         cfg.Mirrorz.Site.Abbr,
-			Name:         cfg.Mirrorz.Site.Name,
-			Homepage:     cfg.Mirrorz.Site.Homepage,
-			Issue:        cfg.Mirrorz.Site.Issue,
-			Request:      cfg.Mirrorz.Site.Request,
-			Email:        cfg.Mirrorz.Site.Email,
-			Group:        cfg.Mirrorz.Site.Group,
-			Disk:         cfg.Mirrorz.Site.Disk,
-			Note:         cfg.Mirrorz.Site.Note,
-			Big:          cfg.Mirrorz.Site.Big,
-			Disable:      cfg.Mirrorz.Site.Disable,
+			URL:          cfg.Site.URL,
+			Logo:         cfg.Site.Logo,
+			LogoDarkmode: cfg.Site.LogoDarkmode,
+			Abbr:         cfg.Site.Abbr,
+			Name:         cfg.Site.Name,
+			Homepage:     cfg.Site.Homepage,
+			Issue:        cfg.Site.Issue,
+			Request:      cfg.Site.Request,
+			Email:        cfg.Site.Email,
+			Group:        cfg.Site.Group,
+			Disk:         cfg.Site.Disk,
+			Note:         cfg.Site.Note,
+			Big:          cfg.Site.Big,
+			Disable:      cfg.Site.Disable,
 		}
 	}
 
-	// Mirrorz info
-	mirrorzInfo := make([]mirrors.Info, 0, len(cfg.Mirrorz.Info))
-	for _, info := range cfg.Mirrorz.Info {
-		urls := make([]mirrors.MirrorzURL, 0, len(info.Urls))
-		for _, u := range info.Urls {
-			urls = append(urls, mirrors.MirrorzURL{
+	// ISOInfo
+	mirrorzInfo := make([]mirrors.Info, 0, len(cfg.ISOInfo))
+	for _, info := range cfg.ISOInfo {
+		urls := make([]mirrors.ISOURL, 0, len(info.URLs))
+		for _, u := range info.URLs {
+			urls = append(urls, mirrors.ISOURL{
 				Name: u.Name,
-				Url:  u.Url,
+				URL:  u.URL,
 			})
 		}
 		mirrorzInfo = append(mirrorzInfo, mirrors.Info{
 			Distro:   info.Distro,
 			Category: info.Category,
-			Urls:     urls,
+			URLs:     urls,
 		})
 	}
 

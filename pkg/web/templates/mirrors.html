@@ -1,0 +1,26 @@
+{{ define "content" }}
+<div class="overflow-auto">
+    <table class="striped" id="mirror-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Type</th>
+                <th>LastUpdate</th>
+                <th>Help</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{ range .Mirrors }}
+            <tr>
+                <td>{{ if .URL }}<a href="{{ .URL }}">{{ .Name }}</a>{{ else }}{{ .Name }}{{ end }}</td>
+                <td>{{ if .Desc }}{{ .Desc }}{{ else }}N/A{{ end }}</td>
+                <td>{{ if .Type }}{{ .Type }}{{ else }}N/A{{ end }}</td>
+                <td>{{ if .LastUpdate }}{{ .LastUpdate }}{{ else }}N/A{{ end }}</td>
+                <td>{{ if .Help }}<a href="{{ .Help }}">help</a>{{ else }}N/A{{ end }}</td>
+            </tr>
+            {{ end }}
+        </tbody>
+    </table>
+</div>
+{{ end }}

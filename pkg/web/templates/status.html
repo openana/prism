@@ -1,0 +1,36 @@
+{{ define "content" }}
+<div class="overflow-auto">
+    <table class="striped" id="mirror-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Help</th>
+                <th>Upstream</th>
+                <th>Size</th>
+                <th>Status</th>
+                <th>LastUpdate</th>
+                <th>LastStarted</th>
+                <th>LastEnded</th>
+                <th>NextSchedule</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{ range .Mirrors }}
+            <tr>
+                <td>{{ if .URL }}<a href="{{ .URL }}">{{ .Name }}</a>{{ else }}{{ .Name }}{{ end }}</td>
+                <td>{{ if .Type }}{{ .Type }}{{ else }}N/A{{ end }}</td>
+                <td>{{ if .Help }}<a href="{{ .Help }}">help</a>{{ else }}N/A{{ end }}</td>
+                <td>{{ if .Upstream }}{{ .Upstream }}{{ else }}N/A{{ end }}</td>
+                <td>{{ if .Size }}{{ .Size }}{{ else }}N/A{{ end }}</td>
+                <td>{{ if .Status }}{{ .Status }}{{ else }}N/A{{ end }}</td>
+                <td>{{ if .LastUpdate }}{{ .LastUpdate }}{{ else }}N/A{{ end }}</td>
+                <td>{{ if .LastStarted }}{{ .LastStarted }}{{ else }}N/A{{ end }}</td>
+                <td>{{ if .LastEnded }}{{ .LastEnded }}{{ else }}N/A{{ end }}</td>
+                <td>{{ if .NextSchedule }}{{ .NextSchedule }}{{ else }}N/A{{ end }}</td>
+            </tr>
+            {{ end }}
+        </tbody>
+    </table>
+</div>
+{{ end }}

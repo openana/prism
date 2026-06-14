@@ -58,9 +58,9 @@ type Mirrorz struct {
 }
 
 // Site holds the global metadata about one mirror site.
-// Only Url and Abbr are mandatory per the MirrorZ spec.
+// Only URL and Abbr are mandatory per the MirrorZ spec.
 type Site struct {
-	Url          string `json:"url"`
+	URL          string `json:"url"`
 	Logo         string `json:"logo,omitempty"`
 	LogoDarkmode string `json:"logo_darkmode,omitempty"`
 	Abbr         string `json:"abbr"`
@@ -78,22 +78,22 @@ type Site struct {
 
 // Info describes a category-view entry in the MirrorZ info list.
 type Info struct {
-	Distro   string       `json:"distro"`
-	Category string       `json:"category"`
-	Urls     []MirrorzURL `json:"urls"`
+	Distro   string   `json:"distro"`
+	Category string   `json:"category"`
+	URLs     []ISOURL `json:"urls"`
 }
 
-// MirrorzURL is a named URL used in Info entries.
-type MirrorzURL struct {
+// ISOURL is a named URL used in Info entries.
+type ISOURL struct {
 	Name string `json:"name"`
-	Url  string `json:"url"`
+	URL  string `json:"url"`
 }
 
 // MirrorzEntry describes a single mirror in the mirrors list of a MirrorZ response.
 type MirrorzEntry struct {
 	Cname    string `json:"cname"`
 	Desc     string `json:"desc,omitempty"`
-	Url      string `json:"url,omitempty"`
+	URL      string `json:"url,omitempty"`
 	Status   string `json:"status,omitempty"`
 	Help     string `json:"help,omitempty"`
 	Upstream string `json:"upstream,omitempty"`

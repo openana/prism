@@ -1,0 +1,77 @@
+{{ define "base" }}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <title>{{ (Site).Name }}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <style>
+        #mirror-table {
+            font-family: monospace;
+            font-size: .9em;
+        }
+
+        th,
+        td {
+            white-space: nowrap;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="container">
+        <nav>
+            <ul>
+                <li>
+                    <strong><a href="{{ (Site).URL }}" class="contrast">{{ (Site).Name }}</a></strong>
+                </li>
+            </ul>
+            <ul>
+                <li><a href="/pages/mirrors" class="secondary">Mirrors</a></li>
+                <li><a href="/pages/downloads" class="secondary">Downloads</a></li>
+                <li><a href="/pages/status" class="secondary">Status</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="container">
+        {{ block "content" . }}{{ end }}
+    </main>
+
+    <footer>
+        <div>
+            {{ if (Site).Homepage -}}
+            <a href="{{ (Site).Homepage }}">Homepage</a>
+            {{- end }}
+            {{ if (Site).Issues -}}
+            <a href="{{ (Site).Issues }}">Report Issues</a>
+            {{- end }}
+            {{ if (Site).Request -}}
+            <a href="{{ (Site).Request }}">Request Mirrors</a>
+            {{- end }}
+            {{ if (Site).Email -}}
+            <a href="mailto:{{ (Site).Email }}">Email</a>
+            {{- end }}
+            {{ if (Site).Group -}}
+            <a>IM Group: {{ (Site).Group }}</a>
+            {{- end }}
+            {{ if (Site).Disk -}}
+            <a>Storage Usage: {{ (Site).Disk }}</a>
+            {{- end }}
+            {{ if (Site).Note -}}
+            <a>Note: {{ (Site).Note }}</a>
+            {{- end }}
+            {{ if (Site).Big -}}
+            <a href="{{ (Site).Big }}">Big File</a>
+            {{- end }}
+        </div>
+    </footer>
+
+</body>
+
+</html>
+{{ end }}

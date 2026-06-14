@@ -247,7 +247,7 @@ func (mgr *Manager) Mirrorz() (*Mirrorz, error) {
 				continue
 			}
 			entry.Desc = m.Metadata.Desc
-			entry.Url = m.Metadata.URL
+			entry.URL = m.Metadata.URL
 			entry.Help = m.Metadata.HelpURL
 		}
 
