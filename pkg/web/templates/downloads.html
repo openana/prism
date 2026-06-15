@@ -1,12 +1,13 @@
 {{ define "content" }}
+<hgroup>
+    <h2><img class="header-icon" src="/static/img/download-24.svg" alt="">{{ .Locale.T "downloads.title" }}</h2>
+</hgroup>
+
+{{ range .Categories }}
+<hgroup>
+    <h3>{{ .Category | catCname }}</h3>
+</hgroup>
 <div class="overflow-auto">
-    <hgroup>
-        <h2><img class="header-icon" src="/static/img/download-24.svg" alt="">{{ .Locale.T "downloads.title" }}</h2>
-    </hgroup>
-    {{ range .Categories }}
-    <hgroup>
-        <h3>{{ .Category | catCname }}</h3>
-    </hgroup>
     <table class="striped" id="downloads-table">
         <thead>
             <tr>
@@ -21,6 +22,6 @@
             {{ end }}
         </tbody>
     </table>
-    {{ end }}
 </div>
+{{ end }}
 {{ end }}

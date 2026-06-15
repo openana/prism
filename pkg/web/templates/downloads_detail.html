@@ -1,14 +1,14 @@
 {{ define "content" }}
+<nav>
+    <ul>
+        <li><a href="/downloads" class="secondary">&larr; {{ .Locale.T "downloads_detail.back" }}</a></li>
+    </ul>
+</nav>
+<hgroup>
+    <h3>{{ .Info.Distro }}</h3>
+    <p>{{ .Info.Category | catCname }}</p>
+</hgroup>
 <div class="overflow-auto">
-    <nav>
-        <ul>
-            <li><a href="/downloads" class="secondary">&larr; {{ .Locale.T "downloads_detail.back" }}</a></li>
-        </ul>
-    </nav>
-    <hgroup>
-        <h3>{{ .Info.Distro }}</h3>
-        <p>{{ .Info.Category | catCname }}</p>
-    </hgroup>
     <table class="striped" id="downloads-table">
         <thead>
             <tr>

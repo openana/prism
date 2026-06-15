@@ -1,29 +1,26 @@
 {{ define "content" }}
+<nav>
+    <ul>
+        <li><a href="/mirrors" class="secondary">&larr; {{ .Locale.T "browse.back" }}</a></li>
+    </ul>
+</nav>
+<hgroup>
+    <h2><img class="header-icon" src="/static/img/file-directory-24.svg" alt="">{{ .Locale.T "browse.title"
+        }}</h2>
+</hgroup>
 <div class="overflow-auto">
     <nav>
         <ul>
-            <li><a href="/mirrors" class="secondary">&larr; {{ .Locale.T "browse.back" }}</a></li>
+            <li><a href="/mirrors">{{ .Locale.T "browse.mirrors" }}</a></li>
+            {{ range .Breadcrumbs }}
+            <li>></li>
+            <li><a href="{{ .URL }}">{{ .Label }}</a></li>
+            {{ end }}
         </ul>
     </nav>
-
-    <hgroup>
-        <h2><img class="header-icon" src="/static/img/file-directory-24.svg" alt="">{{ .Locale.T "browse.title"
-            }}</h2>
-    </hgroup>
-
-    <div class="overflow-auto">
-        <nav>
-            <ul>
-                <li><a href="/mirrors">{{ .Locale.T "browse.mirrors" }}</a></li>
-                {{ range .Breadcrumbs }}
-                <li>></li>
-                <li><a href="{{ .URL }}">{{ .Label }}</a></li>
-                {{ end }}
-            </ul>
-        </nav>
-    </div>
-
-    {{ if .Entries }}
+</div>
+{{ if .Entries }}
+<div class="overflow-auto">
     <table class="striped" id="browse-table">
         <thead>
             <tr>
@@ -51,8 +48,8 @@
             {{ end }}
         </tbody>
     </table>
-    {{ else }}
-    <p><em>{{ .Locale.T "browse.empty" }}</em></p>
-    {{ end }}
 </div>
+{{ else }}
+<p><em>{{ .Locale.T "browse.empty" }}</em></p>
+{{ end }}
 {{ end }}

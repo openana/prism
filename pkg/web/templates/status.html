@@ -1,8 +1,9 @@
 {{ define "content" }}
+<hgroup>
+    <h2><img class="header-icon" src="/static/img/graph-bar-horizontal-24.svg" alt="">{{ .Locale.T "status.title" }}
+    </h2>
+</hgroup>
 <div class="overflow-auto">
-    <hgroup>
-        <h2><img class="header-icon" src="/static/img/graph-bar-horizontal-24.svg" alt="">{{ .Locale.T "status.title" }}</h2>
-    </hgroup>
     <table class="striped" id="status-table">
         <thead>
             <tr>
