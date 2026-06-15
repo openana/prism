@@ -12,13 +12,19 @@ import (
 
 type ServerConfig interface {
 	Listen() string
+	Concurrency() int
+	KeepAlive() bool
+	TCPKeepAlive() bool
 }
 
 type Server struct {
 	state atomic.Int32
 
 	cfg struct {
-		listen string
+		listen       string
+		concurrency  int
+		keepAlive    bool
+		tcpKeepAlive bool
 	}
 
 	router router.Handler
@@ -31,6 +37,9 @@ func NewServer(cfg ServerConfig, router router.Handler, logger zerolog.Logger) *
 	srv := &Server{}
 
 	srv.cfg.listen = cfg.Listen()
+	srv.cfg.concurrency = cfg.Concurrency()
+	srv.cfg.keepAlive = cfg.KeepAlive()
+	srv.cfg.tcpKeepAlive = cfg.TCPKeepAlive()
 
 	srv.router = router
 	srv.logger = logger.With().Str("module", "server.Server").Logger()
@@ -41,9 +50,11 @@ func NewServer(cfg ServerConfig, router router.Handler, logger zerolog.Logger) *
 
 func (srv *Server) Run(ctx context.Context) error {
 	srv.http = &fasthttp.Server{
-		// TODO: add more options via configuration if needed
-		Name:    meta.ServerName,
-		Handler: srv.router.HandleRequest,
+		Name:             meta.ServerName,
+		Handler:          srv.router.HandleRequest,
+		Concurrency:      srv.cfg.concurrency,
+		DisableKeepalive: !srv.cfg.keepAlive,
+		TCPKeepalive:     srv.cfg.tcpKeepAlive,
 	}
 
 	srv.logger.Info().Str("listen", srv.cfg.listen).Msg("http listen")

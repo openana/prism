@@ -93,6 +93,7 @@ def build_test_config(mock_port_a: int, mock_port_b: int) -> str:
     http:
       listen: "{DEFAULT_PRISM_LISTEN}"
       proto_header: "X-Forwarded-Proto"
+      tcp_keepalive: true
 
     index:
       cache_ttl: 5m

@@ -37,8 +37,11 @@ type Log struct {
 }
 
 type HTTP struct {
-	Listen      string `yaml:"listen"`
-	ProtoHeader string `yaml:"proto_header"`
+	Listen       string `yaml:"listen"`
+	ProtoHeader  string `yaml:"proto_header"`
+	Concurrency  *int   `yaml:"concurrency"`
+	KeepAlive    *bool  `yaml:"keepalive"`
+	TCPKeepAlive *bool  `yaml:"tcp_keepalive"`
 }
 
 type Index struct {
