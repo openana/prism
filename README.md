@@ -10,8 +10,9 @@
 - [ ] Static files
 
 #### Testing
-- [ ] Benchmarks and pprof
+- [x] Benchmarks and pprof
 - [ ] Test with mocked file server and tunasync
 
 ## Credits
 [Pico CSS](https://github.com/picocss/pico): MIT.
+[Octicons](https://github.com/primer/octicons): MIT.
