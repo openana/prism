@@ -80,6 +80,7 @@ type HostSyncStatus struct {
 
 type SyncStatusTunasync struct {
 	Endpoint string `yaml:"endpoint"`
+	Timeout  string `yaml:"timeout"`
 }
 
 type Mirror struct {

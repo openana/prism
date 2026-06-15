@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/docker/go-units"
 	"github.com/rs/zerolog"
@@ -19,9 +20,10 @@ type mockTunasyncHostConfig struct {
 	endpoint string
 }
 
-func (m mockTunasyncHostConfig) Name() string     { return m.name }
-func (m mockTunasyncHostConfig) Endpoint() string { return m.endpoint }
-func (m mockTunasyncHostConfig) IsHostConfig()    {}
+func (m mockTunasyncHostConfig) Name() string           { return m.name }
+func (m mockTunasyncHostConfig) Endpoint() string       { return m.endpoint }
+func (m mockTunasyncHostConfig) Timeout() time.Duration { return 5 * time.Second }
+func (m mockTunasyncHostConfig) IsHostConfig()          {}
 
 func TestTunasyncHost_FetchMirrors_ParsesTunasyncJSON(t *testing.T) {
 	data, err := os.ReadFile(filepath.Join("testdata", "tunasync.json"))

@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
+	"time"
 
 	"github.com/docker/go-units"
 	"github.com/openana/prism/pkg/meta"
 	"github.com/rs/zerolog"
+	"github.com/valyala/fasthttp"
 )
 
 type TunasyncMirror struct {
@@ -26,12 +27,14 @@ type TunasyncHostConfig interface {
 	HostConfig
 	Name() string
 	Endpoint() string
+	Timeout() time.Duration
 }
 
 type TunasyncHost struct {
 	name     string
 	endpoint string
 	logger   zerolog.Logger
+	client   *fasthttp.Client
 }
 
 func NewTunasyncHost(cfg TunasyncHostConfig, logger zerolog.Logger) *TunasyncHost {
@@ -39,6 +42,10 @@ func NewTunasyncHost(cfg TunasyncHostConfig, logger zerolog.Logger) *TunasyncHos
 		name:     cfg.Name(),
 		endpoint: cfg.Endpoint(),
 		logger:   logger.With().Str("module", "mirrors.TunasyncHost:"+cfg.Name()).Logger(),
+		client: &fasthttp.Client{
+			ReadTimeout:         cfg.Timeout(),
+			MaxIdleConnDuration: 90 * time.Second,
+		},
 	}
 }
 
@@ -47,31 +54,39 @@ func (h *TunasyncHost) Name() string {
 }
 
 func (h *TunasyncHost) FetchMirrors(ctx context.Context) ([]Mirror, error) {
-	h.logger.Debug().Str("endpoint", h.endpoint).Msg("fetching mirrors")
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, h.endpoint, nil)
-	if err != nil {
-		h.logger.Error().Err(err).Str("endpoint", h.endpoint).Msg("request creation failed")
+	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
 
+	h.logger.Debug().Str("endpoint", h.endpoint).Msg("fetching mirrors")
+
+	req := fasthttp.AcquireRequest()
+	defer fasthttp.ReleaseRequest(req)
+	req.SetRequestURI(h.endpoint)
+	req.Header.SetMethod(fasthttp.MethodGet)
 	req.Header.Set("User-Agent", meta.UserAgent)
 
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
+	resp := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseResponse(resp)
+
+	deadline, ok := ctx.Deadline()
+	if !ok {
+		deadline = time.Now().Add(h.client.ReadTimeout)
+	}
+
+	if err := h.client.DoDeadline(req, resp, deadline); err != nil {
 		h.logger.Warn().Err(err).Str("endpoint", h.endpoint).Msg("http request failed")
 		return nil, err
 	}
 
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		h.logger.Warn().Int("status", resp.StatusCode).Str("endpoint", h.endpoint).Msg("unexpected upstream status")
-		return nil, fmt.Errorf("TunasyncHost: unexpected status: %d", resp.StatusCode)
+	if resp.StatusCode() != fasthttp.StatusOK {
+		h.logger.Warn().Int("status", resp.StatusCode()).Str("endpoint", h.endpoint).Msg("unexpected upstream status")
+		return nil, fmt.Errorf("TunasyncHost: unexpected status: %d", resp.StatusCode())
 	}
 
 	var tms []TunasyncMirror
 
-	if err := json.NewDecoder(resp.Body).Decode(&tms); err != nil {
+	if err := json.Unmarshal(resp.Body(), &tms); err != nil {
 		h.logger.Error().Err(err).Str("endpoint", h.endpoint).Msg("json decode failed")
 		return nil, err
 	}

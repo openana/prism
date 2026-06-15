@@ -11,6 +11,7 @@ import (
 type MirrorTunasyncHost struct {
 	name     string
 	endpoint string
+	timeout  time.Duration
 }
 
 func (cfg *SyncStatusTunasync) ToMirrorTunasyncHost(name string) (*MirrorTunasyncHost, error) {
@@ -27,15 +28,27 @@ func (cfg *SyncStatusTunasync) ToMirrorTunasyncHost(name string) (*MirrorTunasyn
 		return nil, fmt.Errorf("bad endpoint: empty host")
 	}
 
+	var timeout time.Duration
+	if cfg.Timeout == "" {
+		timeout = 5 * time.Second
+	} else {
+		timeout, err = time.ParseDuration(cfg.Timeout)
+		if err != nil {
+			return nil, fmt.Errorf("bad timeout: %q", cfg.Timeout)
+		}
+	}
+
 	return &MirrorTunasyncHost{
 		name:     name,
 		endpoint: cfg.Endpoint,
+		timeout:  timeout,
 	}, nil
 }
 
-func (cfg *MirrorTunasyncHost) IsHostConfig()    {}
-func (cfg *MirrorTunasyncHost) Name() string     { return cfg.name }
-func (cfg *MirrorTunasyncHost) Endpoint() string { return cfg.endpoint }
+func (cfg *MirrorTunasyncHost) IsHostConfig()          {}
+func (cfg *MirrorTunasyncHost) Name() string           { return cfg.name }
+func (cfg *MirrorTunasyncHost) Endpoint() string       { return cfg.endpoint }
+func (cfg *MirrorTunasyncHost) Timeout() time.Duration { return cfg.timeout }
 
 type MirrorManager struct {
 	hosts        []mirrors.HostConfig
