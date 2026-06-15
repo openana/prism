@@ -2,6 +2,4 @@
 
 package main
 
-func initCPUProfile() func() { return func() {} }
-
-func initMemProfile() func() { return func() {} }
+func initProfiles() func() { return func() {} }

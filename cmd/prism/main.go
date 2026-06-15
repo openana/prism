@@ -14,8 +14,13 @@ import (
 )
 
 func main() {
-	defer initCPUProfile()()
-	defer initMemProfile()()
+	if !Main() {
+		os.Exit(1)
+	}
+}
+
+func Main() bool {
+	defer initProfiles()()
 
 	configPath := flag.String("config", "config.yaml", "path to YAML config file")
 	flag.Parse()
@@ -23,22 +28,22 @@ func main() {
 	cfg, err := config.Load(*configPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to load config: %v\n", err)
-		os.Exit(1)
+		return false
 	}
 
 	srv, cleanup, err := server.InitializeServer(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to initialize server: %v\n", err)
-		os.Exit(1)
+		return false
 	}
+	defer cleanup()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	if err := srv.Run(ctx); err != nil {
 		fmt.Fprintf(os.Stderr, "server run error: %v\n", err)
-		cleanup()
-		os.Exit(1)
+		return false
 	}
 
 	sigCh := make(chan os.Signal, 1)
@@ -52,5 +57,5 @@ func main() {
 		fmt.Fprintf(os.Stderr, "server stop error: %v\n", err)
 	}
 
-	cleanup()
+	return true
 }

@@ -3,37 +3,53 @@
 package main
 
 import (
+	"fmt"
 	"os"
+	"runtime"
 	"runtime/pprof"
 	"strconv"
 	"time"
 )
 
-// initCPUProfile starts CPU profiling and returns a stop function.
-// The returned function stops profiling and closes the output file.
-func initCPUProfile() func() {
-	t := strconv.FormatInt(time.Now().UnixNano(), 10)
-	f, err := os.Create(t + "-cpu.pprof")
+func initProfiles() func() {
+	runtime.SetMutexProfileFraction(10)
+
+	timestamp := strconv.FormatInt(time.Now().UnixNano(), 10)
+
+	cpuFile, err := os.Create("cpu." + timestamp + ".pprof")
 	if err != nil {
+		fmt.Printf("Could not create CPU profile: %v\n", err)
 		return func() {}
 	}
-	pprof.StartCPUProfile(f)
+	pprof.StartCPUProfile(cpuFile)
+
 	return func() {
 		pprof.StopCPUProfile()
-		f.Close()
-	}
-}
+		cpuFile.Close()
 
-// initMemProfile returns a function that writes the current heap profile
-// to a timestamped file when called.
-func initMemProfile() func() {
-	return func() {
-		t := strconv.FormatInt(time.Now().UnixNano(), 10)
-		f, err := os.Create(t + "-mem.pprof")
-		if err != nil {
-			return
+		memFile, err := os.Create("mem." + timestamp + ".pprof")
+		if err == nil {
+			fmt.Printf("writing mem profile: %s\n", memFile.Name())
+			runtime.GC()
+			if err := pprof.WriteHeapProfile(memFile); err != nil {
+				fmt.Printf("Could not write heap profile: %v\n", err)
+			}
+			memFile.Close()
+		} else {
+			fmt.Printf("Could not write heap profile: %v\n", err)
 		}
-		defer f.Close()
-		pprof.WriteHeapProfile(f)
+
+		mutexFile, err := os.Create("mutex." + timestamp + ".pprof")
+		if err == nil {
+			fmt.Printf("writing mutex profile: %s\n", mutexFile.Name())
+			if p := pprof.Lookup("mutex"); p != nil {
+				if err := p.WriteTo(mutexFile, 0); err != nil {
+					fmt.Printf("Could not write mutex profile: %v\n", err)
+				}
+			}
+			mutexFile.Close()
+		} else {
+			fmt.Printf("Could not write mutex profile: %v\n", err)
+		}
 	}
 }

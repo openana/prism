@@ -513,7 +513,7 @@ class StressRunner:
         if not self._tmpdir:
             return
         tmp_path = pathlib.Path(self._tmpdir.name)
-        for pattern in ["*-cpu.pprof", "*-mem.pprof"]:
+        for pattern in ["*.pprof"]:
             for f in tmp_path.glob(pattern):
                 dest = self.output_dir / f.name
                 shutil.copy2(f, dest)
