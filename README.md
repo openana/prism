@@ -7,10 +7,10 @@
 ~~- [ ] Ignore according to type (proxy/static)~~
 
 #### Router
-- [ ] Static files
+- [x] Static files
 
 #### Testing
-- [x] Benchmarks and pprof
+- [ ] Benchmarks and pprof
 - [ ] Test with mocked file server and tunasync
 
 ## Credits
