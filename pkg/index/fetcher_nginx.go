@@ -5,12 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"iter"
-	"net/http"
 	"time"
 
 	"github.com/openana/prism/pkg/meta"
 	"github.com/rs/zerolog"
 	"github.com/valyala/bytebufferpool"
+	"github.com/valyala/fasthttp"
 )
 
 var slashBytes = []byte("/")
@@ -24,11 +24,11 @@ type NginxFetcherConfig interface {
 type NginxFetcher struct {
 	cfg struct {
 		baseURL string
-		timeout time.Duration
 	}
 
 	deps struct {
 		logger zerolog.Logger
+		client *fasthttp.Client
 	}
 }
 
@@ -36,14 +36,21 @@ func NewNginxFetcher(cfg NginxFetcherConfig, logger zerolog.Logger) *NginxFetche
 	p := &NginxFetcher{}
 
 	p.cfg.baseURL = cfg.BaseURL()
-	p.cfg.timeout = cfg.Timeout()
 
 	p.deps.logger = logger.With().Str("module", "index.NginxFetcher").Str("baseURL", p.cfg.baseURL).Logger()
+	p.deps.client = &fasthttp.Client{
+		ReadTimeout:         cfg.Timeout(),
+		MaxIdleConnDuration: 90 * time.Second,
+	}
 
 	return p
 }
 
 func (p *NginxFetcher) AllOrErr(ctx context.Context, path []byte) (iter.Seq[Entry], error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
 	p.deps.logger.Debug().Bytes("path", path).Msg("fetching index")
 
 	buf := bytebufferpool.Get()
@@ -55,36 +62,39 @@ func (p *NginxFetcher) AllOrErr(ctx context.Context, path []byte) (iter.Seq[Entr
 		buf.WriteByte('/')
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, p.cfg.timeout)
-	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, buf.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
+	req := fasthttp.AcquireRequest()
+	defer fasthttp.ReleaseRequest(req)
+	req.SetRequestURIBytes(buf.B)
+	req.Header.SetMethod(fasthttp.MethodGet)
 	req.Header.Set("User-Agent", meta.UserAgent)
 
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
+	resp := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseResponse(resp)
+
+	deadline, ok := ctx.Deadline()
+	if !ok {
+		deadline = time.Now().Add(p.deps.client.ReadTimeout)
+	}
+
+	if err := p.deps.client.DoDeadline(req, resp, deadline); err != nil {
 		p.deps.logger.Warn().Err(err).Bytes("path", path).Msg("http request failed")
 		return nil, err
 	}
 
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		if resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusNotFound {
-			p.deps.logger.Debug().Bytes("path", path).Int("status", resp.StatusCode).Msg("index not found")
+	statusCode := resp.StatusCode()
+	if statusCode != fasthttp.StatusOK {
+		if statusCode == fasthttp.StatusForbidden || statusCode == fasthttp.StatusNotFound {
+			p.deps.logger.Debug().Bytes("path", path).Int("status", statusCode).Msg("index not found")
 			return nil, ErrNotFound
 		} else {
-			p.deps.logger.Warn().Bytes("path", path).Int("status", resp.StatusCode).Msg("unexpected upstream status")
+			p.deps.logger.Warn().Bytes("path", path).Int("status", statusCode).Msg("unexpected upstream status")
 			return nil, ErrUpstreamFailure
 		}
 	}
 
 	var nes []NginxEntry
 
-	if err := json.NewDecoder(resp.Body).Decode(&nes); err != nil {
+	if err := json.Unmarshal(resp.Body(), &nes); err != nil {
 		return nil, err
 	}
 
