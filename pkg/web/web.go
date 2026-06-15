@@ -8,6 +8,7 @@ import (
 	"github.com/openana/prism/pkg/index"
 	"github.com/openana/prism/pkg/meta"
 	"github.com/openana/prism/pkg/mirrors"
+	purl "github.com/openana/prism/pkg/url"
 	"github.com/openana/prism/pkg/web/i18n"
 	"github.com/rs/zerolog"
 	"github.com/valyala/fasthttp"
@@ -36,7 +37,8 @@ type Handler interface {
 	HandleDownloadsDetail(ctx *fasthttp.RequestCtx)
 	HandleStatus(ctx *fasthttp.RequestCtx)
 	HandleStatic(ctx *fasthttp.RequestCtx)
-	HandleBrowser(ctx *fasthttp.RequestCtx)
+	HandleBrowse(ctx *fasthttp.RequestCtx)
+	HandleNotFound(ctx *fasthttp.RequestCtx)
 }
 
 type Site struct {
@@ -79,6 +81,7 @@ type Server struct {
 	deps struct {
 		mirrorGetter  mirrors.Getter
 		indexProvider index.Provider
+		pathResolver  purl.Resolver
 		logger        zerolog.Logger
 	}
 
@@ -87,10 +90,12 @@ type Server struct {
 		status          *template.Template
 		downloads       *template.Template
 		downloadsDetail *template.Template
+		browse          *template.Template
+		notFound        *template.Template
 	}
 }
 
-func NewServer(cfg ServerConfig, mirrorGetter mirrors.Getter, indexProvider index.Provider, logger zerolog.Logger) *Server {
+func NewServer(cfg ServerConfig, mirrorGetter mirrors.Getter, indexProvider index.Provider, pathResolver purl.Resolver, logger zerolog.Logger) *Server {
 	s := &Server{}
 
 	s.cfg.site = cfg.Site()
@@ -103,6 +108,7 @@ func NewServer(cfg ServerConfig, mirrorGetter mirrors.Getter, indexProvider inde
 
 	s.deps.mirrorGetter = mirrorGetter
 	s.deps.indexProvider = indexProvider
+	s.deps.pathResolver = pathResolver
 	s.deps.logger = logger.With().Str("module", "web.Server").Logger()
 
 	funcMap := template.FuncMap{
@@ -127,14 +133,12 @@ func NewServer(cfg ServerConfig, mirrorGetter mirrors.Getter, indexProvider inde
 	s.pages.status = parsePage("status.html")
 	s.pages.downloads = parsePage("downloads.html")
 	s.pages.downloadsDetail = parsePage("downloads_detail.html")
+	s.pages.browse = parsePage("browse.html")
+	s.pages.notFound = parsePage("404.html")
 
 	return s
 }
 
 func (s *Server) resolveLocale(ctx *fasthttp.RequestCtx) *i18n.Locale {
 	return i18n.Resolve(string(ctx.Request.Header.Peek("Accept-Language")))
-}
-
-func (s *Server) HandleBrowser(ctx *fasthttp.RequestCtx) {
-	ctx.SetStatusCode(fasthttp.StatusNotImplemented)
 }

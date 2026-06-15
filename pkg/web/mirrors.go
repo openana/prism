@@ -24,10 +24,17 @@ func FormatMirrors(src *mirrors.Mirror) Mirror {
 	}
 
 	if src.Metadata != nil {
-		tgt.URL = src.Metadata.URL
 		tgt.Help = src.Metadata.HelpURL
 		tgt.Type = src.Metadata.Type.String()
 		tgt.Desc = src.Metadata.Desc
+
+		switch src.Metadata.Type {
+		case mirrors.Rsync:
+			tgt.URL = "/browse?path=" + src.Metadata.URL
+		case mirrors.Redirect:
+			tgt.URL = src.Metadata.URL
+		default:
+		}
 	}
 
 	if src.Sync != nil {

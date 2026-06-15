@@ -1,0 +1,14 @@
+{{ define "content" }}
+<div>
+    <nav>
+        <ul>
+            <li><a href="/mirrors" class="secondary">&larr; {{ .Locale.T "error.back_to_mirrors" }}</a></li>
+        </ul>
+    </nav>
+    <hgroup>
+        <h2>{{ .Locale.T "error.not_found_title" }}</h2>
+        <p>{{ .Locale.T "error.not_found_message" }}</p>
+    </hgroup>
+    <div class="error-kaomoji">(>_<)</div>
+</div>
+{{ end }}

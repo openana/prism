@@ -63,6 +63,7 @@ func NewRouter(cfg RouterConfig, logger zerolog.Logger, accessLogger log.AccessL
 	r.GET("/", rt.handleRootRedirect)
 	r.GET("/status", rt.deps.webHandler.HandleStatus)
 	r.GET("/mirrors", rt.deps.webHandler.HandleMirrors)
+	r.GET("/browse", rt.deps.webHandler.HandleBrowse)
 	r.GET("/downloads", rt.deps.webHandler.HandleDownloads)
 	r.GET("/downloads/{distro}", rt.deps.webHandler.HandleDownloadsDetail)
 
@@ -160,7 +161,7 @@ func (rt *Router) handleRedirect(ctx *fasthttp.RequestCtx) {
 	var ok bool
 	pathBuf.B, record, ok = rt.deps.pathResolver.Append(path, pathBuf.B)
 	if !ok {
-		ctx.Error("path not resolved", fasthttp.StatusNotFound)
+		rt.deps.webHandler.HandleNotFound(ctx)
 		return
 	}
 

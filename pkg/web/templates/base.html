@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark">
     <title>{{ (site).Name }}</title>
-    <link rel="stylesheet" href="/static/pico.min.fbc9a63f.css">
+    <link rel="stylesheet" href="/static/css/pico.min.fbc9a63f.css">
     <style>
         #mirror-table {
             font-family: monospace;
@@ -20,6 +20,11 @@
         }
 
         #downloads-table {
+            font-family: monospace;
+            font-size: .9em;
+        }
+
+        #browse-table {
             font-family: monospace;
             font-size: .9em;
         }
@@ -49,20 +54,60 @@
 
         /* status row colors — light scheme */
         #status-table tbody tr.status-failed td,
-        #status-table tbody tr.status-failed th  { background-color: #FAEEEB; }
+        #status-table tbody tr.status-failed th {
+            background-color: #FAEEEB;
+        }
+
         #status-table tbody tr.status-syncing td,
-        #status-table tbody tr.status-syncing th { background-color: #E9F2FC; }
+        #status-table tbody tr.status-syncing th {
+            background-color: #E9F2FC;
+        }
+
         #status-table tbody tr.status-paused td,
-        #status-table tbody tr.status-paused th  { background-color: #FDF1B4; }
+        #status-table tbody tr.status-paused th {
+            background-color: #FDF1B4;
+        }
+
+        .header-icon {
+            width: 1.2em;
+            height: 1.2em;
+            vertical-align: text-bottom;
+            margin-right: 0.25em;
+        }
+
+        .browser-icon {
+            vertical-align: text-bottom;
+        }
 
         /* status row colors — dark scheme */
         @media (prefers-color-scheme: dark) {
+
             #status-table tbody tr.status-failed td,
-            #status-table tbody tr.status-failed th  { background-color: #45150C; }
+            #status-table tbody tr.status-failed th {
+                background-color: #45150C;
+            }
+
             #status-table tbody tr.status-syncing td,
-            #status-table tbody tr.status-syncing th { background-color: #052940; }
+            #status-table tbody tr.status-syncing th {
+                background-color: #052940;
+            }
+
             #status-table tbody tr.status-paused td,
-            #status-table tbody tr.status-paused th  { background-color: #2B2600; }
+            #status-table tbody tr.status-paused th {
+                background-color: #2B2600;
+            }
+
+            .header-icon,
+            .browser-icon {
+                filter: invert(1);
+            }
+        }
+
+        .error-kaomoji {
+            font-family: monospace;
+            font-size: 200px;
+            line-height: 1.25;
+            margin-bottom: 24px;
         }
     </style>
 </head>

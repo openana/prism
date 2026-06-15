@@ -62,20 +62,20 @@ func (s *Server) HandleDownloads(ctx *fasthttp.RequestCtx) {
 func (s *Server) HandleDownloadsDetail(ctx *fasthttp.RequestCtx) {
 	distro, ok := ctx.UserValue("distro").(string)
 	if !ok || distro == "" {
-		ctx.Error("not found", fasthttp.StatusNotFound)
+		s.HandleNotFound(ctx)
 		return
 	}
 
 	var err error
 	distro, err = url.PathUnescape(distro)
 	if err != nil {
-		ctx.Error("not found", fasthttp.StatusNotFound)
+		s.HandleNotFound(ctx)
 		return
 	}
 
 	idx, ok := s.cfg.isoInfoIdx[distro]
 	if !ok {
-		ctx.Error("not found", fasthttp.StatusNotFound)
+		s.HandleNotFound(ctx)
 		return
 	}
 
