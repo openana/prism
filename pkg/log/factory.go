@@ -39,7 +39,7 @@ func NewAccessLogger(cfg AccessLoggerConfig) (l AccessLogger, f func(), e error)
 func newLogger(cfg LoggerConfig) (zerolog.Logger, func(), error) {
 	output := cfg.Output()
 	if cfg.Level() == zerolog.Disabled {
-		return zerolog.New(io.Discard), func() {}, nil
+		return zerolog.New(io.Discard).Level(zerolog.Disabled), func() {}, nil
 	} else {
 		switch strings.ToLower(output) {
 		case "":
