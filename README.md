@@ -1,17 +1,18 @@
 ## TODOs
-#### Mirror Manager:
-- [x] Mirrorz support
-- [x] Limit status, type
 
-#### URL Resolver
-~~- [ ] Ignore according to type (proxy/static)~~
+#### Mirrors
+- [ ] Add cname database
 
-#### Router
-- [x] Static files
+#### Web
+- [ ] Add news (compile from markdown from local directory at startup)
+- [ ] Add mirrors help (embed pre-compiled html templates)
 
 #### Testing
-- [ ] Benchmarks and pprof
-- [ ] Test with mocked file server and tunasync
+- [ ] Mirrors api stress-test
+- [ ] Web stress-test
+
+#### Optimization
+- [ ] Refactor iterator pattern into forEach closure pattern to avoid string allocation overhead
 
 ## Credits
 [Pico CSS](https://github.com/picocss/pico): MIT.
