@@ -1,0 +1,5 @@
+*-results
+main
+/*.json
+*.txt
+config.yaml

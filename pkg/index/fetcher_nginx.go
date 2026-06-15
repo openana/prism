@@ -73,7 +73,7 @@ func (p *NginxFetcher) AllOrErr(ctx context.Context, path []byte) (iter.Seq[Entr
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		if resp.StatusCode == http.StatusNotFound {
+		if resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusNotFound {
 			p.deps.logger.Debug().Bytes("path", path).Int("status", resp.StatusCode).Msg("index not found")
 			return nil, ErrNotFound
 		} else {

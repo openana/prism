@@ -14,6 +14,9 @@ import (
 )
 
 func main() {
+	defer initCPUProfile()()
+	defer initMemProfile()()
+
 	configPath := flag.String("config", "config.yaml", "path to YAML config file")
 	flag.Parse()
 
