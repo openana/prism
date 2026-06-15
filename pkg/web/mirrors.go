@@ -2,6 +2,7 @@ package web
 
 import (
 	"bufio"
+	"strconv"
 	"time"
 
 	"github.com/openana/prism/pkg/mirrors"
@@ -50,8 +51,13 @@ type MirrorPage struct {
 }
 
 func (s *Server) HandleMirrors(ctx *fasthttp.RequestCtx) {
+	it, age := s.deps.mirrorGetter.All()
+
+	ctx.Response.Header.Set("Cache-Control", "public, max-age="+strconv.Itoa(int(s.deps.mirrorGetter.CacheTTL().Seconds())))
+	ctx.Response.Header.Set("Age", strconv.Itoa(int(age.Seconds())))
+
 	var mirrors []Mirror
-	for m := range s.deps.mirrorGetter.All() {
+	for m := range it {
 		mirrors = append(mirrors, FormatMirrors(&m))
 	}
 

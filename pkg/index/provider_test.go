@@ -86,7 +86,8 @@ func TestCachedProvider_AllOrErr_CacheMissThenHit(t *testing.T) {
 	})
 
 	// First call: cache miss, should call fetcher.
-	it, err := p.AllOrErr(context.Background(), "alpine.example.com", []byte("/v3.16/"))
+	it, age, err := p.AllOrErr(context.Background(), "alpine.example.com", []byte("/v3.16/"))
+	_ = age
 	if err != nil {
 		t.Fatalf("first AllOrErr() unexpected error: %v", err)
 	}
@@ -110,7 +111,8 @@ func TestCachedProvider_AllOrErr_CacheMissThenHit(t *testing.T) {
 	}
 
 	// Second call: cache hit, should NOT call fetcher.
-	it2, err := p.AllOrErr(context.Background(), "alpine.example.com", []byte("/v3.16/"))
+	it2, age, err := p.AllOrErr(context.Background(), "alpine.example.com", []byte("/v3.16/"))
+	_ = age
 	if err != nil {
 		t.Fatalf("second AllOrErr() unexpected error: %v", err)
 	}
@@ -134,7 +136,7 @@ func TestCachedProvider_AllOrErr_CacheMissThenHit(t *testing.T) {
 func TestCachedProvider_AllOrErr_NonexistentHost(t *testing.T) {
 	p := newTestProvider(10*time.Second, 1024*1024, map[string]Fetcher{})
 
-	_, err := p.AllOrErr(context.Background(), "no.such.host", []byte("/path"))
+	_, _, err := p.AllOrErr(context.Background(), "no.such.host", []byte("/path"))
 	if err == nil {
 		t.Fatal("expected error for nonexistent host, got nil")
 	}
@@ -149,7 +151,7 @@ func TestCachedProvider_AllOrErr_UpstreamError(t *testing.T) {
 		"err.example.com": mock,
 	})
 
-	_, err := p.AllOrErr(context.Background(), "err.example.com", []byte("/path"))
+	_, _, err := p.AllOrErr(context.Background(), "err.example.com", []byte("/path"))
 	if err == nil {
 		t.Fatal("expected error from upstream fetcher, got nil")
 	}
@@ -158,7 +160,7 @@ func TestCachedProvider_AllOrErr_UpstreamError(t *testing.T) {
 	}
 
 	// Second call: upstream error should NOT be cached — fetcher called again.
-	_, err = p.AllOrErr(context.Background(), "err.example.com", []byte("/path"))
+	_, _, err = p.AllOrErr(context.Background(), "err.example.com", []byte("/path"))
 	if err == nil {
 		t.Fatal("expected error from upstream fetcher on retry, got nil")
 	}
@@ -180,7 +182,8 @@ func TestCachedProvider_AllOrErr_StaleCacheEviction(t *testing.T) {
 	})
 
 	// First call: populate cache.
-	it, err := p.AllOrErr(context.Background(), "test.example.com", []byte("/v1/"))
+	it, age, err := p.AllOrErr(context.Background(), "test.example.com", []byte("/v1/"))
+	_ = age
 	if err != nil {
 		t.Fatalf("first AllOrErr() unexpected error: %v", err)
 	}
@@ -194,7 +197,8 @@ func TestCachedProvider_AllOrErr_StaleCacheEviction(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 
 	// Second call: cache should be stale, fetcher called again.
-	it2, err := p.AllOrErr(context.Background(), "test.example.com", []byte("/v1/"))
+	it2, age, err := p.AllOrErr(context.Background(), "test.example.com", []byte("/v1/"))
+	_ = age
 	if err != nil {
 		t.Fatalf("second AllOrErr() unexpected error: %v", err)
 	}
@@ -222,7 +226,8 @@ func TestCachedProvider_AllOrErr_EmptyPath(t *testing.T) {
 	})
 
 	// Empty path should work.
-	it, err := p.AllOrErr(context.Background(), "x.example.com", []byte(""))
+	it, age, err := p.AllOrErr(context.Background(), "x.example.com", []byte(""))
+	_ = age
 	if err != nil {
 		t.Fatalf("AllOrErr() with empty path unexpected error: %v", err)
 	}
@@ -241,7 +246,8 @@ func TestCachedProvider_AllOrErr_EmptyPath(t *testing.T) {
 	}
 
 	// Cache hit with empty path.
-	it2, err := p.AllOrErr(context.Background(), "x.example.com", []byte(""))
+	it2, age, err := p.AllOrErr(context.Background(), "x.example.com", []byte(""))
+	_ = age
 	if err != nil {
 		t.Fatalf("second AllOrErr() unexpected error: %v", err)
 	}

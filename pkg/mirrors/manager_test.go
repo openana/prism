@@ -112,7 +112,8 @@ func TestManager_All_ReturnsMirrorsFromHost(t *testing.T) {
 	defer cancel()
 
 	// First call: cache is stale, blocks until fetch completes.
-	mirrors := slices.Collect(mgr.All())
+	it, _ := mgr.All()
+	mirrors := slices.Collect(it)
 
 	if len(mirrors) != 3 {
 		t.Fatalf("got %d mirrors, want 3", len(mirrors))
@@ -161,7 +162,8 @@ func TestManager_All_MergesMultipleHosts(t *testing.T) {
 	)
 	defer cancel()
 
-	mirrors := slices.Collect(mgr.All())
+	it, _ := mgr.All()
+	mirrors := slices.Collect(it)
 
 	// Should have 3 unique mirrors: alpine, debian, ubuntu (sorted).
 	if len(mirrors) != 3 {
@@ -202,7 +204,8 @@ func TestManager_All_HandlesFailedHost(t *testing.T) {
 	)
 	defer cancel()
 
-	mirrors := slices.Collect(mgr.All())
+	it, _ := mgr.All()
+	mirrors := slices.Collect(it)
 
 	if len(mirrors) != 1 {
 		t.Fatalf("got %d mirrors, want 1", len(mirrors))
@@ -243,7 +246,8 @@ func TestManager_All_InjectsBaseMirrorMetadata(t *testing.T) {
 	)
 	defer cancel()
 
-	mirrors := slices.Collect(mgr.All())
+	it, _ := mgr.All()
+	mirrors := slices.Collect(it)
 
 	if len(mirrors) != 1 {
 		t.Fatalf("got %d mirrors, want 1", len(mirrors))
@@ -294,7 +298,8 @@ func TestManager_All_AddsMissingBaseMirrors(t *testing.T) {
 	)
 	defer cancel()
 
-	mirrors := slices.Collect(mgr.All())
+	it, _ := mgr.All()
+	mirrors := slices.Collect(it)
 
 	if len(mirrors) != 2 {
 		t.Fatalf("got %d mirrors, want 2 (alpine from host + gentoo from base)", len(mirrors))
@@ -338,12 +343,14 @@ func TestManager_All_RespectsCacheTTL(t *testing.T) {
 	defer cancel()
 
 	// First call: cache stale, blocks and fetches.
-	_ = slices.Collect(mgr.All())
+	it, _ := mgr.All()
+	_ = slices.Collect(it)
 
 	callsAfterFirst := host.calls.Load()
 
 	// Second call immediately: cache is fresh, should NOT trigger another fetch.
-	_ = slices.Collect(mgr.All())
+	it, _ = mgr.All()
+	_ = slices.Collect(it)
 
 	if host.calls.Load() != callsAfterFirst {
 		t.Errorf("FetchMirrors called %d times, expected %d (no extra fetch when cache is fresh)",
@@ -367,7 +374,8 @@ func TestManager_All_RefreshesAfterTTL(t *testing.T) {
 	defer cancel()
 
 	// First fetch.
-	_ = slices.Collect(mgr.All())
+	it, _ := mgr.All()
+	_ = slices.Collect(it)
 
 	callsAfterFirst := host.calls.Load()
 
@@ -375,7 +383,8 @@ func TestManager_All_RefreshesAfterTTL(t *testing.T) {
 	time.Sleep(30 * time.Millisecond)
 
 	// This should trigger a new refresh (blocks until done).
-	_ = slices.Collect(mgr.All())
+	it, _ = mgr.All()
+	_ = slices.Collect(it)
 
 	if host.calls.Load() <= callsAfterFirst {
 		t.Errorf("FetchMirrors called %d times, expected > %d (should refresh after TTL)",
@@ -409,7 +418,8 @@ func TestManager_All_ConcurrentCallersDeduplicated(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			mirrors := slices.Collect(mgr.All())
+			it, _ := mgr.All()
+			mirrors := slices.Collect(it)
 			if len(mirrors) != 1 || mirrors[0].Name != "alpine" {
 				t.Errorf("got unexpected mirrors: %v", mirrors)
 			}
@@ -450,7 +460,8 @@ func TestManager_All_BackoffAfterFailure(t *testing.T) {
 	mgr.backoff = mgr.cfg.initialBackoff
 
 	// First call: triggers fetch, host fails, lastAttempt is set.
-	_ = slices.Collect(mgr.All())
+	it, _ := mgr.All()
+	_ = slices.Collect(it)
 
 	callsAfterFirst := host.calls.Load()
 	if callsAfterFirst != 1 {
@@ -458,7 +469,8 @@ func TestManager_All_BackoffAfterFailure(t *testing.T) {
 	}
 
 	// Second call within backoff: should NOT trigger a new fetch.
-	_ = slices.Collect(mgr.All())
+	it, _ = mgr.All()
+	_ = slices.Collect(it)
 
 	if host.calls.Load() != callsAfterFirst {
 		t.Errorf("FetchMirrors called %d times, expected %d (backoff should prevent re-fetch)",
@@ -469,7 +481,8 @@ func TestManager_All_BackoffAfterFailure(t *testing.T) {
 	time.Sleep(300 * time.Millisecond)
 
 	// Third call after backoff: should trigger a new fetch.
-	_ = slices.Collect(mgr.All())
+	it, _ = mgr.All()
+	_ = slices.Collect(it)
 
 	if host.calls.Load() <= callsAfterFirst {
 		t.Errorf("FetchMirrors called %d times, expected > %d (should re-fetch after backoff)",
@@ -497,7 +510,8 @@ func TestManager_All_ShutdownReturnsImmediately(t *testing.T) {
 
 	done := make(chan struct{})
 	go func() {
-		_ = slices.Collect(mgr.All())
+		it, _ := mgr.All()
+		_ = slices.Collect(it)
 		close(done)
 	}()
 
@@ -546,7 +560,8 @@ func TestManager_Mirrorz_ReturnsMirrorzWithSync(t *testing.T) {
 	)
 	defer cancel()
 
-	mz, err := mgr.Mirrorz()
+	mz, age, err := mgr.Mirrorz()
+	_ = age
 	if err != nil {
 		t.Fatalf("Mirrorz() unexpected error: %v", err)
 	}
@@ -613,7 +628,8 @@ func TestManager_Mirrorz_DisableWhenNoSync(t *testing.T) {
 	)
 	defer cancel()
 
-	mz, err := mgr.Mirrorz()
+	mz, age, err := mgr.Mirrorz()
+	_ = age
 	if err != nil {
 		t.Fatalf("Mirrorz() unexpected error: %v", err)
 	}
@@ -653,14 +669,16 @@ func TestManager_Mirrorz_RespectsCacheTTL(t *testing.T) {
 	defer cancel()
 
 	// First Mirrorz call: cache stale, triggers fetch.
-	_, err := mgr.Mirrorz()
+	_, age, err := mgr.Mirrorz()
+	_ = age
 	if err != nil {
 		t.Fatalf("first Mirrorz() error: %v", err)
 	}
 	callsAfterFirst := host.calls.Load()
 
 	// Second Mirrorz call: cache is fresh, should NOT trigger another fetch.
-	_, err = mgr.Mirrorz()
+	_, age, err = mgr.Mirrorz()
+	_ = age
 	if err != nil {
 		t.Fatalf("second Mirrorz() error: %v", err)
 	}
@@ -689,7 +707,8 @@ func TestManager_Mirrorz_EmptyMirrors(t *testing.T) {
 	)
 	defer cancel()
 
-	mz, err := mgr.Mirrorz()
+	mz, age, err := mgr.Mirrorz()
+	_ = age
 	if err != nil {
 		t.Fatalf("Mirrorz() unexpected error: %v", err)
 	}
@@ -709,7 +728,8 @@ func TestManager_All_HandlesNilHosts(t *testing.T) {
 	)
 	defer cancel()
 
-	mirrors := slices.Collect(mgr.All())
+	it, _ := mgr.All()
+	mirrors := slices.Collect(it)
 	if len(mirrors) != 0 {
 		t.Fatalf("got %d mirrors, want 0", len(mirrors))
 	}

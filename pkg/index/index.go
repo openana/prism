@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"iter"
+	"time"
 )
 
 // Provider and Fetcher should return these errors if applies.
@@ -14,7 +15,11 @@ var (
 )
 
 type Provider interface {
-	AllOrErr(ctx context.Context, host string, path []byte) (iter.Seq[Entry], error)
+	// AllOrErr returns an iterator over directory entries, the age of the
+	// cached data (time since it was fetched from upstream), and any error.
+	AllOrErr(ctx context.Context, host string, path []byte) (iter.Seq[Entry], time.Duration, error)
+	// CacheTTL returns the configured cache time-to-live.
+	CacheTTL() time.Duration
 }
 
 type EntryType int8

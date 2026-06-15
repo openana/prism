@@ -46,6 +46,8 @@ func GroupByCategory(infos []ISOInfo) []CategoryGroup {
 }
 
 func (s *Server) HandleDownloads(ctx *fasthttp.RequestCtx) {
+	ctx.Response.Header.Set("Cache-Control", "public, max-age=3600")
+
 	ctx.SetContentType("text/html; charset=utf-8")
 	ctx.SetBodyStreamWriter(func(w *bufio.Writer) {
 		page := DownloadsIndexPage{
@@ -60,6 +62,8 @@ func (s *Server) HandleDownloads(ctx *fasthttp.RequestCtx) {
 }
 
 func (s *Server) HandleDownloadsDetail(ctx *fasthttp.RequestCtx) {
+	ctx.Response.Header.Set("Cache-Control", "public, max-age=3600")
+
 	distro, ok := ctx.UserValue("distro").(string)
 	if !ok || distro == "" {
 		s.HandleNotFound(ctx)

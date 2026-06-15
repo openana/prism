@@ -2,6 +2,7 @@ package web
 
 import (
 	"bufio"
+	"strconv"
 	"time"
 
 	"github.com/docker/go-units"
@@ -69,8 +70,13 @@ func statusClass(s mirrors.SyncStatus) string {
 }
 
 func (s *Server) HandleStatus(ctx *fasthttp.RequestCtx) {
+	it, age := s.deps.mirrorGetter.All()
+
+	ctx.Response.Header.Set("Cache-Control", "public, max-age="+strconv.Itoa(int(s.deps.mirrorGetter.CacheTTL().Seconds())))
+	ctx.Response.Header.Set("Age", strconv.Itoa(int(age.Seconds())))
+
 	var mirrors []Status
-	for m := range s.deps.mirrorGetter.All() {
+	for m := range it {
 		st, ok := FormatStatus(&m)
 		if !ok {
 			continue

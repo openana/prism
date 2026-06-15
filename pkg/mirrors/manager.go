@@ -57,6 +57,7 @@ type cache struct {
 	mirrors      map[string]Mirror
 	sorted       []Mirror
 	refreshAfter time.Time
+	refreshedAt  time.Time
 }
 
 func NewManager(cfg ManagerConfig, logger zerolog.Logger) (*Manager, func(), error) {
@@ -104,7 +105,8 @@ func NewManager(cfg ManagerConfig, logger zerolog.Logger) (*Manager, func(), err
 
 // All returns an iterator over all mirrors. If the cache is stale and not in
 // backoff, it blocks until a fresh fetch completes (or the manager is shut down).
-func (mgr *Manager) All() iter.Seq[Mirror] {
+// The returned time.Duration is the age of the cached data.
+func (mgr *Manager) All() (iter.Seq[Mirror], time.Duration) {
 	c := mgr.cache.Load()
 
 	if time.Now().After(c.refreshAfter) {
@@ -122,13 +124,15 @@ func (mgr *Manager) All() iter.Seq[Mirror] {
 		c = mgr.cache.Load()
 	}
 
+	age := time.Since(c.refreshedAt)
+
 	return func(yield func(Mirror) bool) {
 		for _, m := range c.sorted {
 			if !yield(m) {
 				return
 			}
 		}
-	}
+	}, age
 }
 
 func (mgr *Manager) fetch() {
@@ -200,19 +204,26 @@ func (mgr *Manager) fetch() {
 		}
 		newCache.mirrors = oldCache.mirrors
 		newCache.sorted = oldCache.sorted
+		newCache.refreshedAt = oldCache.refreshedAt
 		mgr.deps.logger.Warn().Dur("backoff", time.Until(newCache.refreshAfter)).Msg("all hosts failed, using stale cache")
 	} else {
 		mgr.backoff = mgr.cfg.initialBackoff
 		newCache.refreshAfter = time.Now().Add(mgr.cfg.cacheTTL)
+		newCache.refreshedAt = time.Now()
 		mgr.deps.logger.Debug().Int("mirrors", len(newCache.sorted)).Msg("cache refreshed")
 	}
 	mgr.cache.Store(newCache)
 }
 
+func (mgr *Manager) CacheTTL() time.Duration {
+	return mgr.cfg.cacheTTL
+}
+
 // Mirrorz builds the MirrorZ JSON response. If the cache is stale, it triggers
 // a fresh upstream fetch (respecting cache TTL) and merges the results into the
 // cache so that other consumers benefit from the fresh data.
-func (mgr *Manager) Mirrorz() (*Mirrorz, error) {
+// The returned time.Duration is the age of the cached data.
+func (mgr *Manager) Mirrorz() (*Mirrorz, time.Duration, error) {
 	c := mgr.cache.Load()
 
 	if time.Now().After(c.refreshAfter) {
@@ -226,11 +237,13 @@ func (mgr *Manager) Mirrorz() (*Mirrorz, error) {
 		case <-ch:
 		case <-mgr.ctx.Done():
 			mgr.deps.logger.Debug().Msg("mirrorz: manager context done during fetch")
-			return nil, mgr.ctx.Err()
+			return nil, 0, mgr.ctx.Err()
 		}
 
 		c = mgr.cache.Load()
 	}
+
+	age := time.Since(c.refreshedAt)
 
 	entries := make([]MirrorzEntry, 0, len(c.sorted))
 	for _, m := range c.sorted {
@@ -268,5 +281,5 @@ func (mgr *Manager) Mirrorz() (*Mirrorz, error) {
 		Site:    mgr.cfg.mirrorzSite,
 		Info:    mgr.cfg.mirrorzInfo,
 		Mirrors: entries,
-	}, nil
+	}, age, nil
 }

@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"strconv"
 
 	"github.com/fasthttp/router"
 	"github.com/openana/prism/pkg/index"
@@ -119,7 +120,7 @@ func (rt *Router) handleIndex(ctx *fasthttp.RequestCtx) {
 		return
 	}
 
-	it, err := rt.deps.indexProvider.AllOrErr(ctx, record.Host, pathBuf.B)
+	it, age, err := rt.deps.indexProvider.AllOrErr(ctx, record.Host, pathBuf.B)
 	if err != nil {
 		switch {
 		case errors.Is(err, index.ErrNotFound):
@@ -131,6 +132,9 @@ func (rt *Router) handleIndex(ctx *fasthttp.RequestCtx) {
 		}
 		return
 	}
+
+	ctx.Response.Header.Set("Cache-Control", "public, max-age="+strconv.Itoa(int(rt.deps.indexProvider.CacheTTL().Seconds())))
+	ctx.Response.Header.Set("Age", strconv.Itoa(int(age.Seconds())))
 
 	setHeaderNDJSON(ctx)
 
@@ -180,12 +184,17 @@ func (rt *Router) handleRedirect(ctx *fasthttp.RequestCtx) {
 }
 
 func (rt *Router) handleMirrorsRequest(ctx *fasthttp.RequestCtx) {
+	it, age := rt.deps.mirrorGetter.All()
+
+	ctx.Response.Header.Set("Cache-Control", "public, max-age="+strconv.Itoa(int(rt.deps.mirrorGetter.CacheTTL().Seconds())))
+	ctx.Response.Header.Set("Age", strconv.Itoa(int(age.Seconds())))
+
 	setHeaderNDJSON(ctx)
 
 	ctx.SetBodyStreamWriter(func(w *bufio.Writer) {
 		enc := json.NewEncoder(w)
 
-		for m := range rt.deps.mirrorGetter.All() {
+		for m := range it {
 			if err := enc.Encode(m); err != nil {
 				rt.deps.logger.Error().Err(err).Msg("mirror encode failed")
 				continue
@@ -200,12 +209,15 @@ func (rt *Router) handleMirrorsRequest(ctx *fasthttp.RequestCtx) {
 }
 
 func (rt *Router) handleMirrorzRequest(ctx *fasthttp.RequestCtx) {
-	mirrorz, err := rt.deps.mirrorGetter.Mirrorz()
+	mirrorz, age, err := rt.deps.mirrorGetter.Mirrorz()
 	if err != nil {
 		rt.deps.logger.Error().Err(err).Msg("mirrorz generation failed")
 		ctx.Error("internal server error", fasthttp.StatusInternalServerError)
 		return
 	}
+
+	ctx.Response.Header.Set("Cache-Control", "public, max-age="+strconv.Itoa(int(rt.deps.mirrorGetter.CacheTTL().Seconds())))
+	ctx.Response.Header.Set("Age", strconv.Itoa(int(age.Seconds())))
 
 	setHeaderJSON(ctx)
 

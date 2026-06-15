@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -63,12 +64,15 @@ func (s *Server) HandleBrowse(ctx *fasthttp.RequestCtx) {
 	}
 
 	// Fetch from the index provider
-	it, err := s.deps.indexProvider.AllOrErr(ctx, record.Host, resolvedPath)
+	it, age, err := s.deps.indexProvider.AllOrErr(ctx, record.Host, resolvedPath)
 	if err != nil {
 		s.deps.logger.Warn().Err(err).Bytes("path", resolvedPath).Msg("index provider error")
 		s.HandleNotFound(ctx)
 		return
 	}
+
+	ctx.Response.Header.Set("Cache-Control", "public, max-age="+strconv.Itoa(int(s.deps.indexProvider.CacheTTL().Seconds())))
+	ctx.Response.Header.Set("Age", strconv.Itoa(int(age.Seconds())))
 
 	// Collect and format entries.
 	var entries []BrowseEntry
