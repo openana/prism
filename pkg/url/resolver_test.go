@@ -2,7 +2,6 @@
 package url
 
 import (
-	"io"
 	"sync"
 	"testing"
 	"time"
@@ -21,7 +20,7 @@ func (c stubConfig) Records() map[string]Record {
 
 // helpResolve builds a TrieResolver with the given records and a discard logger.
 func helpResolve(records map[string]Record) *TrieResolver {
-	return NewTrieResolver(stubConfig{records: records}, zerolog.New(io.Discard).Level(zerolog.Disabled))
+	return NewTrieResolver(stubConfig{records: records}, zerolog.Nop())
 }
 
 // --- Phase 1: Tracer Bullet ---

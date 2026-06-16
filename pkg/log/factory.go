@@ -2,7 +2,6 @@ package log
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"strings"
 	"time"
@@ -39,7 +38,7 @@ func NewAccessLogger(cfg AccessLoggerConfig) (l AccessLogger, f func(), e error)
 func newLogger(cfg LoggerConfig) (zerolog.Logger, func(), error) {
 	output := cfg.Output()
 	if cfg.Level() == zerolog.Disabled {
-		return zerolog.New(io.Discard).Level(zerolog.Disabled), func() {}, nil
+		return zerolog.Nop(), func() {}, nil
 	} else {
 		switch strings.ToLower(output) {
 		case "":

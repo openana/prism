@@ -3,7 +3,6 @@ package url
 
 import (
 	"fmt"
-	"io"
 	"testing"
 
 	"github.com/rs/zerolog"
@@ -116,7 +115,7 @@ func BenchmarkTrieResolver_Commit(b *testing.B) {
 	for _, n := range sizes {
 		b.Run(fmt.Sprintf("n=%d", n), func(b *testing.B) {
 			b.StopTimer()
-			rt := NewTrieResolver(stubConfig{records: map[string]Record{}}, zerolog.New(io.Discard))
+			rt := NewTrieResolver(stubConfig{records: map[string]Record{}}, zerolog.Nop())
 			b.StartTimer()
 
 			for range b.N {
