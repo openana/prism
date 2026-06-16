@@ -6,7 +6,7 @@
 </nav>
 <hgroup>
     <h3>{{ .Info.Distro }}</h3>
-    <p>{{ .Info.Category | catCname }}</p>
+    <p>{{ .Info.Category | catAlias | .Locale.T }}</p>
 </hgroup>
 <div class="overflow-auto">
     <table class="striped" id="downloads-table">

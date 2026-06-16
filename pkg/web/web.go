@@ -118,7 +118,7 @@ func NewServer(cfg ServerConfig, mirrorGetter mirrors.Getter, indexProvider inde
 		"version": func() string {
 			return meta.ServerName
 		},
-		"catCname": categoryCname,
+		"catAlias": categoryAlias,
 	}
 
 	parsePage := func(pageFile string) *template.Template {

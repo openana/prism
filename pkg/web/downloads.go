@@ -92,14 +92,14 @@ func (s *Server) HandleDownloadsDetail(ctx *fasthttp.RequestCtx) {
 	})
 }
 
-func categoryCname(s string) string {
+func categoryAlias(s string) string {
 	switch s {
 	case "os":
-		return "OS"
+		return "downloads.category_alias.os"
 	case "app":
-		return "Application"
+		return "downloads.category_alias.app"
 	case "font":
-		return "Font"
+		return "downloads.category_alias.font"
 	default:
 		return s
 	}

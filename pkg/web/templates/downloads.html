@@ -5,7 +5,7 @@
 
 {{ range .Categories }}
 <hgroup>
-    <h3>{{ .Category | catCname }}</h3>
+    <h3>{{ .Category | catAlias | $.Locale.T  }}</h3>
 </hgroup>
 <div class="overflow-auto">
     <table class="striped" id="downloads-table">
