@@ -10,6 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/openana/prism/pkg/mirrors/cname"
 	"github.com/rs/zerolog"
 	"golang.org/x/sync/singleflight"
 )
@@ -248,7 +249,7 @@ func (mgr *Manager) Mirrorz() (*Mirrorz, time.Duration, error) {
 	entries := make([]MirrorzEntry, 0, len(c.sorted))
 	for _, m := range c.sorted {
 		entry := MirrorzEntry{
-			Cname: m.Name,
+			Cname: cname.Cname(m.Name),
 		}
 
 		if m.Metadata != nil {
