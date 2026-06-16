@@ -3,10 +3,10 @@ package index
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"iter"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/openana/prism/pkg/meta"
 	"github.com/rs/zerolog"
 	"github.com/valyala/bytebufferpool"
@@ -94,7 +94,7 @@ func (p *NginxFetcher) AllOrErr(ctx context.Context, path []byte) (iter.Seq[Entr
 
 	var nes []NginxEntry
 
-	if err := json.Unmarshal(resp.Body(), &nes); err != nil {
+	if err := sonic.Unmarshal(resp.Body(), &nes); err != nil {
 		return nil, err
 	}
 

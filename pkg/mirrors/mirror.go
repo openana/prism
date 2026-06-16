@@ -1,8 +1,9 @@
 package mirrors
 
 import (
-	"encoding/json"
 	"errors"
+
+	"github.com/bytedance/sonic"
 )
 
 type SyncStatus int8
@@ -66,7 +67,7 @@ func SyncStatusFromString(s string) (ss SyncStatus) {
 }
 
 func (s SyncStatus) MarshalJSON() ([]byte, error) {
-	return json.Marshal(s.String())
+	return sonic.Marshal(s.String())
 }
 
 func (s *SyncStatus) UnmarshalJSON(v []byte) error {
@@ -124,7 +125,7 @@ func TypeFromString(s string) (ss Type) {
 }
 
 func (s Type) MarshalJSON() ([]byte, error) {
-	return json.Marshal(s.String())
+	return sonic.Marshal(s.String())
 }
 
 func (s *Type) UnmarshalJSON(v []byte) error {

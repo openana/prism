@@ -2,10 +2,11 @@ package index
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"iter"
 	"time"
+
+	"github.com/bytedance/sonic"
 )
 
 // Provider and Fetcher should return these errors if applies.
@@ -55,7 +56,7 @@ func EntryTypeFromString(s string) EntryType {
 }
 
 func (t EntryType) MarshalJSON() ([]byte, error) {
-	return json.Marshal(t.String())
+	return sonic.Marshal(t.String())
 }
 
 func (t *EntryType) UnmarshalJSON(v []byte) error {

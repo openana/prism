@@ -3,10 +3,10 @@ package router
 import (
 	"bufio"
 	"bytes"
-	"encoding/json"
 	"errors"
 	"strconv"
 
+	"github.com/bytedance/sonic"
 	"github.com/fasthttp/router"
 	"github.com/openana/prism/pkg/index"
 	"github.com/openana/prism/pkg/log"
@@ -139,7 +139,7 @@ func (rt *Router) handleIndex(ctx *fasthttp.RequestCtx) {
 	setHeaderNDJSON(ctx)
 
 	ctx.SetBodyStreamWriter(func(w *bufio.Writer) {
-		enc := json.NewEncoder(w)
+		enc := sonic.ConfigDefault.NewEncoder(w)
 
 		for e := range it {
 			if err := enc.Encode(e); err != nil {
@@ -192,7 +192,7 @@ func (rt *Router) handleMirrorsRequest(ctx *fasthttp.RequestCtx) {
 	setHeaderNDJSON(ctx)
 
 	ctx.SetBodyStreamWriter(func(w *bufio.Writer) {
-		enc := json.NewEncoder(w)
+		enc := sonic.ConfigDefault.NewEncoder(w)
 
 		for m := range it {
 			if err := enc.Encode(m); err != nil {
@@ -222,7 +222,7 @@ func (rt *Router) handleMirrorzRequest(ctx *fasthttp.RequestCtx) {
 	setHeaderJSON(ctx)
 
 	ctx.SetBodyStreamWriter(func(w *bufio.Writer) {
-		enc := json.NewEncoder(w)
+		enc := sonic.ConfigDefault.NewEncoder(w)
 		if err := enc.Encode(mirrorz); err != nil {
 			rt.deps.logger.Error().Err(err).Msg("mirrorz encode failed")
 		}

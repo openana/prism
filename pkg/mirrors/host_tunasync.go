@@ -2,10 +2,10 @@ package mirrors
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/docker/go-units"
 	"github.com/openana/prism/pkg/meta"
 	"github.com/rs/zerolog"
@@ -86,7 +86,7 @@ func (h *TunasyncHost) FetchMirrors(ctx context.Context) ([]Mirror, error) {
 
 	var tms []TunasyncMirror
 
-	if err := json.Unmarshal(resp.Body(), &tms); err != nil {
+	if err := sonic.Unmarshal(resp.Body(), &tms); err != nil {
 		h.logger.Error().Err(err).Str("endpoint", h.endpoint).Msg("json decode failed")
 		return nil, err
 	}
