@@ -165,7 +165,7 @@ func (rt *Router) handleRedirect(ctx *fasthttp.RequestCtx) {
 	var ok bool
 	pathBuf.B, record, ok = rt.deps.pathResolver.Append(path, pathBuf.B)
 	if !ok {
-		rt.deps.webHandler.HandleNotFound(ctx)
+		ctx.Error("path not resolved", fasthttp.StatusNotFound)
 		return
 	}
 
