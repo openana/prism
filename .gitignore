@@ -1,6 +1,10 @@
-*-results
+stress-*-results-*
 main
 /*.json
 *.txt
 config.yaml
 *.pprof
+__pycache__
+prism-debug
+/test/mock-nginx-index/mock-nginx-index
+

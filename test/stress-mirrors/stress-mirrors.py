@@ -1,31 +1,28 @@
 #!/usr/bin/env python3
 """
-Stress test for prism's /api/index endpoint.
+Stress test for prism's /api/mirrors endpoint.
 
 Orchestrates:
-  1. Two mock-nginx-index servers (deterministic random responses)
+  1. An in-process Python HTTP server serving tunasync.json as a mock tunasync API
   2. prism built with -tags debug (pprof enabled)
-  3. A test config.yaml pointing prism at the mocks
-  4. Concurrent HTTP load against /api/index?path=<path>
+  3. A test config.yaml pointing prism at the mock tunasync server
+  4. Concurrent HTTP load against /api/mirrors
   5. Metrics collection (latency percentiles, throughput, errors)
   6. Clean shutdown + pprof file collection
 
 Usage:
-  python3 test/stress-index/stress-index.py [--interval 30] [--concurrency 10]
+  python3 test/stress-mirrors/stress-mirrors.py [--interval 30] [--concurrency 10]
 """
 
 import argparse
 import concurrent.futures
 import datetime
-import itertools
 import json
 import os
 import pathlib
-import random
 import shutil
 import signal
 import statistics
-import string
 import subprocess
 import sys
 import tempfile
@@ -33,6 +30,7 @@ import textwrap
 import threading
 import time
 import urllib.request
+from http.server import HTTPServer, BaseHTTPRequestHandler
 from typing import Optional
 
 # ---------------------------------------------------------------------------
@@ -40,118 +38,70 @@ from typing import Optional
 # ---------------------------------------------------------------------------
 
 PROJECT_ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
-MOCK_BINARY = PROJECT_ROOT / "test" / "mock-nginx-index" / "mock-nginx-index"
-MOCK_SOURCE = PROJECT_ROOT / "test" / "mock-nginx-index"
 PRISM_SOURCE = PROJECT_ROOT / "cmd" / "prism"
+TUNAYNC_JSON = pathlib.Path(__file__).resolve().parent / "testdata" / "tunasync.json"
 
-DEFAULT_MOCK_PORT_A = 9090
-DEFAULT_MOCK_PORT_B = 9091
+DEFAULT_TUNAYNC_PORT = 9090
 DEFAULT_PRISM_LISTEN = "127.0.0.1:8081"
 DEFAULT_PRISM_PORT = 8081
 DEFAULT_INTERVAL = 30
 DEFAULT_CONCURRENCY = 10
 
+# ---------------------------------------------------------------------------
+# Mirror names used in config (subset of what tunasync.json returns).
+# Each host gets its own subset so both host fetches contribute mirrors.
+# ---------------------------------------------------------------------------
 
-def _default_output_dir() -> pathlib.Path:
-    """Generate a timestamped output directory path."""
-    ts = datetime.datetime.now().strftime("%Y%m%dT%H%M%S")
-    return PROJECT_ROOT / f"stress-index-results-{ts}"
+MOCK_MIRRORS_HOST1 = [
+    ("alpine", "Alpine Linux"),
+    ("archlinux", "Arch Linux"),
+    ("centos", "CentOS"),
+    ("debian", "Debian"),
+    ("fedora", "Fedora"),
+    ("gentoo-portage", "Gentoo Portage"),
+    ("gnu", "GNU"),
+    ("manjaro", "Manjaro"),
+    ("openwrt", "OpenWrt"),
+    ("ubuntu", "Ubuntu"),
+]
+
+MOCK_MIRRORS_HOST2 = [
+    ("centos-vault", "CentOS Vault"),
+    ("deepin", "deepin"),
+    ("epel", "EPEL"),
+    ("kali-images", "Kali Images"),
+    ("raspbian", "Raspbian"),
+    ("rocky", "Rocky Linux"),
+    ("ros", "ROS"),
+    ("ros2", "ROS 2"),
+    ("ubuntu-ports", "Ubuntu Ports"),
+    ("vim", "Vim"),
+]
+
+
+def _mirrors_yaml(mirrors: list[tuple[str, str]], url_prefix_base: str) -> str:
+    """Generate YAML lines for a list of (name, desc) mirror entries.
+
+    Returns content with 0 base-indent so it can be indented uniformly by
+    the caller via ``textwrap.indent``.
+    """
+    lines = []
+    for name, desc in mirrors:
+        lines.append(
+            f"- name: {name}\n"
+            f'  desc: "{desc}"\n'
+            f"  type: rsync\n"
+            f"  url_prefix: {url_prefix_base}/{name}/\n"
+            f"  real_url_prefix: {url_prefix_base}/{name}/\n"
+            f"  help:\n"
+            f'    mode: "off"'
+        )
+    return "\n".join(lines)
+
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-
-def rand_path(rng: random.Random, depth: int = 0) -> str:
-    """Generate a random path segment for stress testing."""
-    if depth <= 0:
-        depth = rng.randint(1, 4)
-    parts = []
-    for _ in range(depth):
-        length = rng.randint(3, 12)
-        segment = "".join(rng.choices(string.ascii_lowercase + string.digits, k=length))
-        parts.append(segment)
-    return "/" + "/".join(parts) + "/"
-
-
-def generate_paths(hosts: list[str], count: int, seed: int = 42) -> list[str]:
-    """Generate a reproducible list of query paths across hosts."""
-    rng = random.Random(seed)
-    paths = []
-    for _ in range(count):
-        host = rng.choice(hosts)
-        subpath = rand_path(rng)
-        paths.append(host + subpath)
-    return paths
-
-
-def build_test_config(mock_port_a: int, mock_port_b: int) -> str:
-    """Generate a test config.yaml as a string."""
-    return textwrap.dedent(f"""\
-    log:
-      level: warn
-      output: stderr
-
-    access_log:
-      level: error
-      output: stderr
-
-    http:
-      listen: "{DEFAULT_PRISM_LISTEN}"
-      proto_header: "X-Forwarded-Proto"
-      tcp_keepalive: true
-
-    index:
-      cache_ttl: 5m
-      cache_max_bytes: 64MB
-
-    sync_status:
-      cache_ttl: 60s
-      fetch_timeout: 1s
-
-    hosts:
-    - name: mock1
-      fqdn: 127.0.0.1
-      index:
-        driver: nginx
-        nginx:
-          timeout: 3s
-          base_url: http://127.0.0.1:{mock_port_a}/api/index/
-      sync_status:
-        driver: tunasync
-        ttl: 60s
-        tunasync:
-          endpoint: http://127.0.0.1:1/tunasync.json
-      mirrors:
-      - name: mock1-root
-        desc: "Mock Host 1"
-        type: rsync
-        url_prefix: /mock1/
-        real_url_prefix: /mock1/
-        help:
-          mode: "off"
-
-    - name: mock2
-      fqdn: 127.0.0.1
-      index:
-        driver: nginx
-        nginx:
-          timeout: 3s
-          base_url: http://127.0.0.1:{mock_port_b}/api/index/
-      sync_status:
-        driver: tunasync
-        ttl: 60s
-        tunasync:
-          endpoint: http://127.0.0.1:1/tunasync.json
-      mirrors:
-      - name: mock2-root
-        desc: "Mock Host 2"
-        type: rsync
-        url_prefix: /mock2/
-        real_url_prefix: /mock2/
-        help:
-          mode: "off"
-    """)
 
 
 def http_get(url: str, timeout: float = 5.0) -> tuple[int, float]:
@@ -168,7 +118,12 @@ def http_get(url: str, timeout: float = 5.0) -> tuple[int, float]:
         return 0, time.monotonic() - start
 
 
-def health_check(url: str, timeout: float = 2.0, retries: int = 30, interval: float = 0.5) -> bool:
+def health_check(
+    url: str,
+    timeout: float = 2.0,
+    retries: int = 30,
+    interval: float = 0.5,
+) -> bool:
     """Poll a URL until it responds 200 or retries exhausted."""
     for _ in range(retries):
         try:
@@ -193,6 +148,149 @@ def kill_process(proc: subprocess.Popen, name: str) -> None:
         print(f"  Force-killing {name}...")
         proc.kill()
         proc.wait()
+
+
+def timestamp() -> str:
+    """Return a compact ISO-8601 timestamp for directory naming."""
+    return datetime.datetime.now().strftime("%Y%m%dT%H%M%S")
+
+
+# ---------------------------------------------------------------------------
+# Mock tunasync HTTP server (in-process, daemon thread)
+# ---------------------------------------------------------------------------
+
+
+class _TunasyncHandler(BaseHTTPRequestHandler):
+    """Serve tunasync.json for every GET request."""
+
+    tunasync_data: bytes = b"[]"
+
+    def do_GET(self) -> None:
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(self.tunasync_data)))
+        self.end_headers()
+        self.wfile.write(self.tunasync_data)
+
+    def log_message(self, format, *args):
+        # Suppress access logs
+        pass
+
+
+class TunasyncMockServer:
+    """A mock tunasync HTTP server running in a daemon thread."""
+
+    def __init__(self, port: int, data_path: pathlib.Path):
+        self._port = port
+        self._data_path = data_path
+        self._server: Optional[HTTPServer] = None
+        self._thread: Optional[threading.Thread] = None
+
+    @property
+    def url(self) -> str:
+        return f"http://127.0.0.1:{self._port}/tunasync.json"
+
+    def start(self) -> None:
+        # Load tunasync JSON
+        data = self._data_path.read_bytes()
+
+        # Create a custom handler class with the pre-loaded data
+        handler = type(
+            "_TunasyncHandler",
+            (_TunasyncHandler,),
+            {"tunasync_data": data},
+        )
+
+        self._server = HTTPServer(("127.0.0.1", self._port), handler)
+        self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
+        self._thread.start()
+        print(f"  Started mock tunasync on port {self._port}")
+
+    def stop(self) -> None:
+        if self._server is not None:
+            self._server.shutdown()
+            self._server.server_close()
+            self._server = None
+        if self._thread is not None:
+            self._thread.join(timeout=2)
+            self._thread = None
+
+
+# ---------------------------------------------------------------------------
+# Config generation
+# ---------------------------------------------------------------------------
+
+
+def build_test_config(mock_tunasync_port: int) -> str:
+    """Generate a test config.yaml as a string."""
+    endpoint = f"http://127.0.0.1:{mock_tunasync_port}/tunasync.json"
+
+    template = textwrap.dedent(f"""\
+    log:
+      level: warn
+      output: stderr
+
+    access_log:
+      level: error
+      output: stderr
+
+    http:
+      listen: "{DEFAULT_PRISM_LISTEN}"
+      proto_header: "X-Forwarded-Proto"
+      tcp_keepalive: true
+
+    index:
+      cache_ttl: 5m
+      cache_max_bytes: 64MB
+
+    sync_status:
+      cache_ttl: 10s
+      fetch_timeout: 5s
+
+    hosts:
+    - name: mock1
+      fqdn: 127.0.0.1
+      index:
+        driver: nginx
+        nginx:
+          timeout: 3s
+          base_url: http://127.0.0.1:1/api/index/
+      sync_status:
+        driver: tunasync
+        ttl: 60s
+        tunasync:
+          endpoint: {endpoint}
+          timeout: 5s
+      mirrors:
+    __HOST1_MIRRORS__
+    - name: mock2
+      fqdn: 127.0.0.1
+      index:
+        driver: nginx
+        nginx:
+          timeout: 3s
+          base_url: http://127.0.0.1:1/api/index/
+      sync_status:
+        driver: tunasync
+        ttl: 60s
+        tunasync:
+          endpoint: {endpoint}
+          timeout: 5s
+      mirrors:
+    __HOST2_MIRRORS__
+    """)
+
+    # After dedent, ``mirrors:`` sits at 2-space indent under the host
+    # block.  Mirror list items need 4-space indent (2 more).
+    host1 = textwrap.indent(
+        _mirrors_yaml(MOCK_MIRRORS_HOST1, "/mock1"), "    "
+    )
+    host2 = textwrap.indent(
+        _mirrors_yaml(MOCK_MIRRORS_HOST2, "/mock2"), "    "
+    )
+    return template.replace("__HOST1_MIRRORS__", host1).replace(
+        "__HOST2_MIRRORS__", host2
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -257,47 +355,24 @@ class StressRunner:
         self,
         interval: int,
         concurrency: int,
-        mock_port_a: int,
-        mock_port_b: int,
+        tunasync_port: int,
         prism_port: int,
         output_dir: pathlib.Path,
-        paths_file: Optional[str],
-        path_count: int,
     ):
         self.interval = interval
         self.concurrency = concurrency
-        self.mock_port_a = mock_port_a
-        self.mock_port_b = mock_port_b
+        self.tunasync_port = tunasync_port
         self.prism_port = prism_port
         self.prism_listen = f"127.0.0.1:{prism_port}"
         self.output_dir = output_dir
-        self.paths_file = paths_file
-        self.path_count = path_count
 
-        self._mock_a: Optional[subprocess.Popen] = None
-        self._mock_b: Optional[subprocess.Popen] = None
+        self._tunasync_mock: Optional[TunasyncMockServer] = None
         self._prism: Optional[subprocess.Popen] = None
-        self._tmpdir: Optional[tempfile.TemporaryDirectory] = None
+        self._tmpdir: Optional[pathlib.Path] = None
         self._stop_event = threading.Event()
         self._metrics = MetricsCollector()
 
-        # Override prism listen if port differs from default
-        if prism_port != DEFAULT_PRISM_PORT:
-            self.prism_listen = f"127.0.0.1:{prism_port}"
-
     # -- Process management --------------------------------------------------
-
-    def _build_mock(self) -> pathlib.Path:
-        """Ensure mock-nginx-index binary exists."""
-        if MOCK_BINARY.exists():
-            return MOCK_BINARY
-        print(f"Building mock-nginx-index...")
-        subprocess.run(
-            ["go", "build", "-o", str(MOCK_BINARY), "."],
-            cwd=str(MOCK_SOURCE),
-            check=True,
-        )
-        return MOCK_BINARY
 
     def _build_prism(self) -> pathlib.Path:
         """Build prism with debug tags, return binary path."""
@@ -310,25 +385,15 @@ class StressRunner:
         )
         return binary
 
-    def _start_mock(self, name: str, port: int) -> subprocess.Popen:
-        binary = self._build_mock()
-        proc = subprocess.Popen(
-            [str(binary), "-port", str(port)],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-        print(f"  Started {name} on port {port} (pid={proc.pid})")
-        return proc
-
     def _start_prism(self, binary: pathlib.Path) -> subprocess.Popen:
-        tmp_path = pathlib.Path(self._tmpdir.name)  # type: ignore[union-attr]
-        config_path = tmp_path / "config.yaml"
+        assert self._tmpdir is not None
+        config_path = self._tmpdir / "config.yaml"
         config_path.write_text(self._config_yaml)
         proc = subprocess.Popen(
             [str(binary), "-config", str(config_path)],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
-            cwd=str(tmp_path),
+            cwd=str(self._tmpdir),
         )
         print(f"  Started prism on {self.prism_listen} (pid={proc.pid})")
         return proc
@@ -343,22 +408,22 @@ class StressRunner:
         prism_binary = self._build_prism()
 
         # Generate test config
-        self._config_yaml = build_test_config(self.mock_port_a, self.mock_port_b)
+        self._config_yaml = build_test_config(self.tunasync_port)
 
         # Temp directory for prism's working dir (where pprof files land)
-        self._tmpdir = tempfile.TemporaryDirectory(prefix="prism-stress-")
+        self._tmpdir = pathlib.Path(
+            tempfile.mkdtemp(prefix="prism-stress-")
+        )
 
-        # Start mock servers
-        print("Starting mock nginx index servers...")
-        self._mock_a = self._start_mock("mock1", self.mock_port_a)
-        self._mock_b = self._start_mock("mock2", self.mock_port_b)
+        # Start mock tunasync server (in-process, daemon thread)
+        print("Starting mock tunasync server...")
+        self._tunasync_mock = TunasyncMockServer(self.tunasync_port, TUNAYNC_JSON)
+        self._tunasync_mock.start()
 
-        # Health-check mocks
-        if not health_check(f"http://127.0.0.1:{self.mock_port_a}/test/"):
-            raise RuntimeError("mock1 failed to start")
-        if not health_check(f"http://127.0.0.1:{self.mock_port_b}/test/"):
-            raise RuntimeError("mock2 failed to start")
-        print("  Mock servers healthy.")
+        # Health-check mock tunasync
+        if not health_check(self._tunasync_mock.url):
+            raise RuntimeError("mock tunasync failed to start")
+        print("  Mock tunasync healthy.")
 
         # Start prism
         print("Starting prism...")
@@ -369,15 +434,19 @@ class StressRunner:
             raise RuntimeError("prism failed to start")
         print("  Prism healthy.")
 
-        # Verify index endpoint works
-        status, _ = http_get(f"http://{self.prism_listen}/api/index?path=/mock1/")
+        # Warm up: hit /api/mirrors so the cache is populated (blocks until fetch completes)
+        print("  Warming cache (GET /api/mirrors)...")
+        status, elapsed = http_get(
+            f"http://{self.prism_listen}/api/mirrors", timeout=10.0
+        )
         if status != 200:
-            raise RuntimeError(f"prism /api/index returned {status}")
-        print("  /api/index verified.")
+            raise RuntimeError(f"prism /api/mirrors returned {status}")
+        print(f"  /api/mirrors warm-up OK ({elapsed*1000:.1f}ms)")
 
     def teardown(self, collect_profiles: bool = True) -> None:
         """Stop all servers gracefully."""
         print("\nShutting down...")
+
         # Stop prism first (SIGINT triggers deferred pprof writes)
         kill_process(self._prism, "prism")
         self._prism = None
@@ -386,42 +455,31 @@ class StressRunner:
         if collect_profiles:
             self._collect_pprof()
 
-        kill_process(self._mock_a, "mock1")
-        self._mock_a = None
-        kill_process(self._mock_b, "mock2")
-        self._mock_b = None
+        # Stop mock tunasync
+        if self._tunasync_mock is not None:
+            self._tunasync_mock.stop()
+            self._tunasync_mock = None
 
         if self._tmpdir:
-            self._tmpdir.cleanup()
+            shutil.rmtree(self._tmpdir, ignore_errors=True)
             self._tmpdir = None
 
     # -- Stress test ---------------------------------------------------------
 
-    def _worker(self, paths_cycle: itertools.cycle) -> None:
-        """Worker thread: hit /api/index in a loop until stopped."""
-        base_url = f"http://{self.prism_listen}/api/index?path="
+    def _worker(self) -> None:
+        """Worker thread: hit /api/mirrors in a loop until stopped."""
+        url = f"http://{self.prism_listen}/api/mirrors"
         while not self._stop_event.is_set():
-            path = next(paths_cycle)
-            url = base_url + path
             status, latency = http_get(url)
             self._metrics.record(status, latency)
 
     def run(self) -> dict:
         """Run the stress test and return metrics snapshot."""
-        # Load or generate paths
-        if self.paths_file:
-            with open(self.paths_file) as f:
-                paths = [line.strip() for line in f if line.strip()]
-        else:
-            paths = generate_paths(
-                ["/mock1", "/mock2"],
-                self.path_count,
-            )
-        print(f"Using {len(paths)} unique paths.")
-        paths_cycle = itertools.cycle(paths)
-
-        print(f"\nStarting stress test: {self.interval}s, {self.concurrency} workers")
-        print(f"Target: http://{self.prism_listen}/api/index?path=...\n")
+        print(
+            f"\nStarting stress test: {self.interval}s, "
+            f"{self.concurrency} workers"
+        )
+        print(f"Target: http://{self.prism_listen}/api/mirrors\n")
 
         start_time = time.monotonic()
 
@@ -429,7 +487,7 @@ class StressRunner:
             max_workers=self.concurrency
         ) as executor:
             futures = [
-                executor.submit(self._worker, paths_cycle)
+                executor.submit(self._worker)
                 for _ in range(self.concurrency)
             ]
 
@@ -483,9 +541,13 @@ class StressRunner:
         print(f"  Duration:           {metrics['duration_sec']}s")
         print(f"  Concurrency:        {metrics['concurrency']}")
         print(f"  Total requests:     {metrics['total_requests']}")
-        print(f"  Throughput:         {metrics['throughput_req_per_sec']} req/s")
-        print(f"  Errors:             {metrics['errors']} "
-              f"({metrics['error_rate']*100:.2f}%)")
+        print(
+            f"  Throughput:         {metrics['throughput_req_per_sec']} req/s"
+        )
+        print(
+            f"  Errors:             {metrics['errors']} "
+            f"({metrics['error_rate']*100:.2f}%)"
+        )
         print()
         print("  Status distribution:")
         for code, count in sorted(metrics["status_counts"].items()):
@@ -518,9 +580,8 @@ class StressRunner:
         """
         if not self._tmpdir:
             return
-        tmp_path = pathlib.Path(self._tmpdir.name)
         for pattern in ["*.pprof"]:
-            for f in tmp_path.glob(pattern):
+            for f in self._tmpdir.glob(pattern):
                 dest = self.output_dir / f.name
                 shutil.copy2(f, dest)
                 size = dest.stat().st_size
@@ -533,13 +594,15 @@ class StressRunner:
 
 
 def main() -> None:
+    ts = timestamp()
+
     parser = argparse.ArgumentParser(
-        description="Stress test prism's /api/index endpoint",
+        description="Stress test prism's /api/mirrors endpoint",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=textwrap.dedent("""\
             Examples:
               %(prog)s --interval 30 --concurrency 10
-              %(prog)s --interval 60 --concurrency 50 --paths-file paths.txt
+              %(prog)s --interval 60 --concurrency 50
               %(prog)s --interval 10 --concurrency 4 --output-dir ./results
         """),
     )
@@ -556,16 +619,10 @@ def main() -> None:
         help=f"Number of concurrent workers (default: {DEFAULT_CONCURRENCY})",
     )
     parser.add_argument(
-        "--mock-port-a",
+        "--tunasync-port",
         type=int,
-        default=DEFAULT_MOCK_PORT_A,
-        help=f"Port for mock server A (default: {DEFAULT_MOCK_PORT_A})",
-    )
-    parser.add_argument(
-        "--mock-port-b",
-        type=int,
-        default=DEFAULT_MOCK_PORT_B,
-        help=f"Port for mock server B (default: {DEFAULT_MOCK_PORT_B})",
+        default=DEFAULT_TUNAYNC_PORT,
+        help=f"Port for mock tunasync server (default: {DEFAULT_TUNAYNC_PORT})",
     )
     parser.add_argument(
         "--prism-port",
@@ -576,39 +633,24 @@ def main() -> None:
     parser.add_argument(
         "--output-dir", "-o",
         type=pathlib.Path,
-        default=_default_output_dir(),
-        help="Output directory for reports and profiles "
-             "(default: stress-index-results-<timestamp>)",
-    )
-    parser.add_argument(
-        "--paths-file", "-f",
-        type=str,
-        default=None,
-        help="File with paths to query (one per line). If omitted, random paths are generated.",
-    )
-    parser.add_argument(
-        "--path-count", "-n",
-        type=int,
-        default=200,
-        help="Number of random paths to generate (default: 200)",
+        default=PROJECT_ROOT / f"stress-mirrors-results-{ts}",
+        help=f"Output directory for reports and profiles "
+             f"(default: stress-mirrors-results-<timestamp>)",
     )
     args = parser.parse_args()
 
     runner = StressRunner(
         interval=args.interval,
         concurrency=args.concurrency,
-        mock_port_a=args.mock_port_a,
-        mock_port_b=args.mock_port_b,
+        tunasync_port=args.tunasync_port,
         prism_port=args.prism_port,
         output_dir=args.output_dir,
-        paths_file=args.paths_file,
-        path_count=args.path_count,
     )
 
     # Handle Ctrl-C gracefully during setup
     def _sig_handler(signum, frame):
         print("\nInterrupted during setup — cleaning up...")
-        runner.teardown()
+        runner.teardown(collect_profiles=False)
         sys.exit(1)
 
     signal.signal(signal.SIGINT, _sig_handler)
