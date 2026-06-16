@@ -8,12 +8,13 @@
 - [ ] Add mirrors help (embed pre-compiled html templates)
 
 #### Testing
-- [ ] Mirrors api stress-test
+- [x] Mirrors api stress-test
 - [ ] Web stress-test
 
 #### Optimization
-- [ ] Refactor iterator pattern into forEach closure pattern to avoid string allocation overhead
+~~- [ ] Refactor iterator pattern into forEach closure pattern to avoid string allocation overhead~~
 
 ## Credits
-[Pico CSS](https://github.com/picocss/pico): MIT.
-[Octicons](https://github.com/primer/octicons): MIT.
+- [Pico CSS](https://github.com/picocss/pico): MIT.
+- [Octicons](https://github.com/primer/octicons): MIT.
+- [MirrorZ](https://github.com/mirrorz-org/mirrorz): MIT.

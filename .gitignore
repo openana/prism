@@ -7,4 +7,3 @@ config.yaml
 __pycache__
 prism-debug
 /test/mock-nginx-index/mock-nginx-index
-
