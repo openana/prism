@@ -1,7 +1,7 @@
 ## TODOs
 
 #### Mirrors
-- [ ] Add cname database
+- [x] Add cname database
 
 #### Web
 - [ ] Add news (compile from markdown from local directory at startup)
@@ -9,7 +9,7 @@
 
 #### Testing
 - [x] Mirrors api stress-test
-- [ ] Web stress-test
+~~- [ ] Web stress-test~~
 
 #### Optimization
 ~~- [ ] Refactor iterator pattern into forEach closure pattern to avoid string allocation overhead~~
