@@ -1,0 +1,3 @@
+[submodule "zdoc"]
+	path = zdoc/global
+	url = git@github.com:openana/mirrorz-docs.git

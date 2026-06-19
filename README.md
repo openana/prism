@@ -18,3 +18,4 @@
 - [Pico CSS](https://github.com/picocss/pico): MIT.
 - [Octicons](https://github.com/primer/octicons): MIT.
 - [MirrorZ](https://github.com/mirrorz-org/mirrorz): MIT.
+- [MirrorZ Docs](https://github.com/mirrorz-org/mirrorz-docs): CC-BY-NC-SA 4.0 International.
