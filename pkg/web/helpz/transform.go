@@ -25,16 +25,28 @@ func newMarkdown() goldmark.Markdown {
 	)
 }
 
+// htmlCommentPat matches HTML comments including multi-line.
+var htmlCommentPat = regexp.MustCompile(`<!--[\s\S]*?-->`)
+
+// stripHTMLComments removes all HTML comment blocks from the content.
+func stripHTMLComments(content string) string {
+	return htmlCommentPat.ReplaceAllString(content, "")
+}
+
 // transformMarkdown converts a single content block's markdown to HTML.
 // It handles the full pipeline:
-// 1. Extract {ztmpl} blocks -> placeholders (with context from config)
-// 2. Strip {#id} headings + goldmark parse -> HTML
-// 3. Rebuild ZTMPl placeholders -> form controls + template scripts + code blocks
+// 1. Strip HTML comments so commented-out {ztmpl} blocks are not extracted
+// 2. Extract {ztmpl} blocks -> placeholders (with context from config)
+// 3. Goldmark parse -> HTML
+// 4. Rebuild ZTMPl placeholders -> form controls + template scripts + code blocks
 func transformMarkdown(content string, config *ZDocConfig, templateCounter, globalMenuCounter *int) ([]ZTMPLBlock, string, error) {
-	// Step 1: Extract ztmpl blocks
+	// Step 1: Strip HTML comments (must be before ztmpl extraction)
+	content = stripHTMLComments(content)
+
+	// Step 2: Extract ztmpl blocks
 	blocks, cleaned := extractZTMPL(content, config, templateCounter, globalMenuCounter)
 
-	// Step 2: Goldmark parse -> HTML
+	// Step 3: Goldmark parse -> HTML
 	md := newMarkdown()
 	var buf bytes.Buffer
 	if err := md.Convert([]byte(cleaned), &buf); err != nil {
@@ -42,10 +54,10 @@ func transformMarkdown(content string, config *ZDocConfig, templateCounter, glob
 	}
 	htmlContent := buf.String()
 
-	// Step 3: Rebuild ZTMPl placeholders
+	// Step 4: Rebuild ZTMPl placeholders
 	htmlContent = rebuildZTMPL(htmlContent, blocks, config)
 
-	// Step 4: Escape any remaining mustache syntax in code blocks and inline code.
+	// Step 5: Escape any remaining mustache syntax in code blocks and inline code.
 	// Goldmark-generated <pre><code> and <code> elements may contain {{endpoint}} etc.
 	htmlContent = escapeAllMustache(htmlContent)
 
