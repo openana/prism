@@ -32,10 +32,6 @@ func (m *mockMirrorGetter) All() (iter.Seq[mirrors.Mirror], time.Duration) {
 	return slices.Values(m.mirrors), m.age
 }
 
-func (m *mockMirrorGetter) Mirrorz() (*mirrors.Mirrorz, time.Duration, error) {
-	return nil, 0, nil
-}
-
 func (m *mockMirrorGetter) CacheTTL() time.Duration {
 	return m.cacheTTL
 }

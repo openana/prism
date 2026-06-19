@@ -1,4 +1,4 @@
-package mirrors
+package mirrorz
 
 import (
 	"bytes"
@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/docker/go-units"
+	"github.com/openana/prism/pkg/mirrors"
 )
 
 // Mirrorz represents the MirrorZ JSON format v1.7.
@@ -108,7 +109,7 @@ type MirrorzEntry struct {
 //
 //	Main:  S(success), Y(syncing), F(failed), P(paused), D(pending), U(unknown)
 //	Aux:   X(next schedule), O(old successful, when syncing or failed)
-func BuildMirrorzStatus(sync *Sync) string {
+func BuildMirrorzStatus(sync *mirrors.Sync) string {
 	if sync == nil {
 		return "U"
 	}
@@ -117,27 +118,27 @@ func BuildMirrorzStatus(sync *Sync) string {
 
 	// Main status with timestamp
 	switch sync.Status {
-	case Success:
+	case mirrors.Success:
 		buf = append(buf, 'S')
 		if sync.LastEnded > 0 {
 			buf = strconv.AppendInt(buf, sync.LastEnded, 10)
 		}
-	case Syncing:
+	case mirrors.Syncing:
 		buf = append(buf, 'Y')
 		if sync.LastStarted > 0 {
 			buf = strconv.AppendInt(buf, sync.LastStarted, 10)
 		}
-	case Failed:
+	case mirrors.Failed:
 		buf = append(buf, 'F')
 		if sync.LastEnded > 0 {
 			buf = strconv.AppendInt(buf, sync.LastEnded, 10)
 		}
-	case Paused:
+	case mirrors.Paused:
 		buf = append(buf, 'P')
 		if sync.LastEnded > 0 {
 			buf = strconv.AppendInt(buf, sync.LastEnded, 10)
 		}
-	case PreSyncing:
+	case mirrors.PreSyncing:
 		buf = append(buf, 'D')
 		if sync.LastStarted > 0 {
 			buf = strconv.AppendInt(buf, sync.LastStarted, 10)
@@ -153,7 +154,7 @@ func BuildMirrorzStatus(sync *Sync) string {
 	}
 
 	// Auxiliary: old successful timestamp (only when currently syncing or failed)
-	if (sync.Status == Syncing || sync.Status == Failed) && sync.LastUpdate > 0 {
+	if (sync.Status == mirrors.Syncing || sync.Status == mirrors.Failed) && sync.LastUpdate > 0 {
 		buf = append(buf, 'O')
 		buf = strconv.AppendInt(buf, sync.LastUpdate, 10)
 	}

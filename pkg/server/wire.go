@@ -9,6 +9,7 @@ import (
 	"github.com/openana/prism/pkg/index"
 	"github.com/openana/prism/pkg/log"
 	"github.com/openana/prism/pkg/mirrors"
+	"github.com/openana/prism/pkg/mirrorz"
 	"github.com/openana/prism/pkg/router"
 	"github.com/openana/prism/pkg/web"
 
@@ -26,6 +27,7 @@ func InitializeServer(cfg *config.Config) (*Server, func(), error) {
 		ProvideAccessLoggerConfig,
 		ProvideTrieResolverConfig,
 		ProvideMirrorManagerConfig,
+		ProvideMirrorzManagerConfig,
 		ProvideCachedIndexProviderConfig,
 		ProvideWebServerConfig,
 
@@ -33,9 +35,13 @@ func InitializeServer(cfg *config.Config) (*Server, func(), error) {
 		purl.URLSet,
 		router.RouterSet,
 		mirrors.MirrorSet,
+		mirrorz.MirrorzSet,
 		log.LogSet,
 		index.IndexSet,
 		web.WebSet,
+
+		// Bind web.Server to mirrorz.HelpURLProvider
+		wire.Bind(new(mirrorz.HelpURLProvider), new(*web.Server)),
 	)
 	return nil, nil, nil
 }
@@ -62,6 +68,10 @@ func ProvideTrieResolverConfig(cfg *config.Config) purl.TrieResolverConfig {
 
 func ProvideMirrorManagerConfig(cfg *config.Config) (mirrors.ManagerConfig, error) {
 	return cfg.ToMirrorManager()
+}
+
+func ProvideMirrorzManagerConfig(cfg *config.Config) (mirrorz.Config, error) {
+	return cfg.ToMirrorzManager()
 }
 
 func ProvideCachedIndexProviderConfig(cfg *config.Config) (index.CachedProviderConfig, error) {

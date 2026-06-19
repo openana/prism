@@ -46,16 +46,12 @@ type mockManagerConfig struct {
 	cacheTTL     time.Duration
 	fetchTimeout time.Duration
 	baseMirrors  map[string]Mirror
-	mirrorzSite  *Site
-	mirrorzInfo  []Info
 }
 
 func (m mockManagerConfig) Hosts() []HostConfig            { return m.hosts }
 func (m mockManagerConfig) CacheTTL() time.Duration        { return m.cacheTTL }
 func (m mockManagerConfig) FetchTimeout() time.Duration    { return m.fetchTimeout }
 func (m mockManagerConfig) BaseMirrors() map[string]Mirror { return m.baseMirrors }
-func (m mockManagerConfig) MirrorzSite() *Site             { return m.mirrorzSite }
-func (m mockManagerConfig) MirrorzInfo() []Info            { return m.mirrorzInfo }
 
 // newTestManager creates a Manager with pre-built hosts for testing.
 // Returns the manager and its cancel function.
@@ -82,13 +78,6 @@ func newTestManager(hosts []Host, ttl, timeout time.Duration, baseMirrors map[st
 	mgr.cancel = cancel
 	mgr.backoff = mgr.cfg.initialBackoff
 
-	return mgr, cancel
-}
-
-func newTestManagerWithMirrorz(hosts []Host, ttl, timeout time.Duration, baseMirrors map[string]Mirror, site Site, info []Info, logger zerolog.Logger) (*Manager, func()) {
-	mgr, cancel := newTestManager(hosts, ttl, timeout, baseMirrors, logger)
-	mgr.cfg.mirrorzSite = site
-	mgr.cfg.mirrorzInfo = info
 	return mgr, cancel
 }
 
@@ -519,200 +508,6 @@ func TestManager_All_ShutdownReturnsImmediately(t *testing.T) {
 		// All() returned promptly.
 	case <-time.After(2 * time.Second):
 		t.Fatal("All() did not return after shutdown, expected immediate return")
-	}
-}
-
-// --- Mirrorz Tests ---
-
-func TestManager_Mirrorz_ReturnsMirrorzWithSync(t *testing.T) {
-	host := &mockHost{
-		name: "h1",
-		mirrors: []Mirror{
-			{
-				Name: "alpine",
-				Sync: &Sync{
-					Status:       Success,
-					LastEnded:    1778201981,
-					NextSchedule: 1780703762,
-					Upstream:     "rsync://example.com/alpine",
-					Size:         4 * 1024 * 1024 * 1024 * 1024,
-				},
-				Metadata: &Metadata{
-					Desc: "Alpine Linux",
-					URL:  "/alpine",
-					Type: Rsync,
-				},
-			},
-		},
-	}
-
-	site := Site{URL: "https://example.org", Abbr: "EX"}
-	mgr, cancel := newTestManagerWithMirrorz(
-		[]Host{host},
-		500*time.Second, // Cache is fresh, but Mirrorz() ignores TTL
-		5*time.Second,
-		nil,
-		site,
-		[]Info{{Distro: "Alpine", Category: "os"}},
-		zerolog.Nop(),
-	)
-	defer cancel()
-
-	mz, age, err := mgr.Mirrorz()
-	_ = age
-	if err != nil {
-		t.Fatalf("Mirrorz() unexpected error: %v", err)
-	}
-
-	if mz.Site.URL != "https://example.org" {
-		t.Errorf("Site.URL = %q", mz.Site.URL)
-	}
-	if len(mz.Info) != 1 || mz.Info[0].Distro != "Alpine" {
-		t.Errorf("Info = %+v", mz.Info)
-	}
-	if len(mz.Mirrors) != 1 {
-		t.Fatalf("got %d mirrors, want 1", len(mz.Mirrors))
-	}
-
-	m := mz.Mirrors[0]
-	if m.Cname != "alpine" {
-		t.Errorf("Cname = %q, want %q", m.Cname, "alpine")
-	}
-	if m.Desc != "Alpine Linux" {
-		t.Errorf("Desc = %q", m.Desc)
-	}
-	if m.URL != "/alpine" {
-		t.Errorf("URL = %q", m.URL)
-	}
-	if m.Help != "/help/alpine" {
-		t.Errorf("Help = %q", m.Help)
-	}
-	if m.Upstream != "rsync://example.com/alpine" {
-		t.Errorf("Upstream = %q", m.Upstream)
-	}
-	if m.Status != "S1778201981X1780703762" {
-		t.Errorf("Status = %q, want %q", m.Status, "S1778201981X1780703762")
-	}
-	if m.Size == "" {
-		t.Error("Size should not be empty for 4TB")
-	}
-	if m.Disable {
-		t.Error("Disable should be false when Sync is present")
-	}
-}
-
-func TestManager_Mirrorz_DisableWhenNoSync(t *testing.T) {
-	host := &mockHost{
-		name:    "h1",
-		mirrors: []Mirror{}, // no mirrors from upstream
-	}
-
-	baseMirrors := map[string]Mirror{
-		"gentoo": {
-			Name:     "gentoo",
-			Metadata: &Metadata{Desc: "Gentoo Linux", Type: Rsync},
-		},
-	}
-
-	site := Site{URL: "https://example.org", Abbr: "EX"}
-	mgr, cancel := newTestManagerWithMirrorz(
-		[]Host{host},
-		500*time.Second,
-		5*time.Second,
-		baseMirrors,
-		site,
-		nil,
-		zerolog.Nop(),
-	)
-	defer cancel()
-
-	mz, age, err := mgr.Mirrorz()
-	_ = age
-	if err != nil {
-		t.Fatalf("Mirrorz() unexpected error: %v", err)
-	}
-
-	if len(mz.Mirrors) != 1 {
-		t.Fatalf("got %d mirrors, want 1 (gentoo from base)", len(mz.Mirrors))
-	}
-
-	m := mz.Mirrors[0]
-	if m.Cname != "gentoo" {
-		t.Errorf("Cname = %q, want %q", m.Cname, "gentoo")
-	}
-	if !m.Disable {
-		t.Error("Disable should be true when Sync is nil (no upstream data)")
-	}
-	if m.Status != "U" {
-		t.Errorf("Status = %q, want %q", m.Status, "U")
-	}
-}
-
-func TestManager_Mirrorz_RespectsCacheTTL(t *testing.T) {
-	host := &mockHost{
-		name:    "h1",
-		mirrors: []Mirror{{Name: "alpine"}},
-	}
-
-	site := Site{URL: "https://example.org", Abbr: "EX"}
-	mgr, cancel := newTestManagerWithMirrorz(
-		[]Host{host},
-		500*time.Second, // Long TTL: cache stays fresh
-		5*time.Second,
-		nil,
-		site,
-		nil,
-		zerolog.Nop(),
-	)
-	defer cancel()
-
-	// First Mirrorz call: cache stale, triggers fetch.
-	_, age, err := mgr.Mirrorz()
-	_ = age
-	if err != nil {
-		t.Fatalf("first Mirrorz() error: %v", err)
-	}
-	callsAfterFirst := host.calls.Load()
-
-	// Second Mirrorz call: cache is fresh, should NOT trigger another fetch.
-	_, age, err = mgr.Mirrorz()
-	_ = age
-	if err != nil {
-		t.Fatalf("second Mirrorz() error: %v", err)
-	}
-
-	if host.calls.Load() != callsAfterFirst {
-		t.Errorf("Mirrorz should respect cache TTL; got %d calls, want %d (no extra fetch when cache is fresh)",
-			host.calls.Load(), callsAfterFirst)
-	}
-}
-
-func TestManager_Mirrorz_EmptyMirrors(t *testing.T) {
-	host := &mockHost{
-		name:    "h1",
-		mirrors: []Mirror{},
-	}
-
-	site := Site{URL: "https://example.org", Abbr: "EX"}
-	mgr, cancel := newTestManagerWithMirrorz(
-		[]Host{host},
-		0,
-		5*time.Second,
-		nil,
-		site,
-		nil,
-		zerolog.Nop(),
-	)
-	defer cancel()
-
-	mz, age, err := mgr.Mirrorz()
-	_ = age
-	if err != nil {
-		t.Fatalf("Mirrorz() unexpected error: %v", err)
-	}
-
-	if len(mz.Mirrors) != 0 {
-		t.Errorf("expected 0 mirrors, got %d", len(mz.Mirrors))
 	}
 }
 

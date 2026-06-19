@@ -55,16 +55,12 @@ type MirrorManager struct {
 	cacheTTL     time.Duration
 	fetchTimeout time.Duration
 	baseMirrors  map[string]mirrors.Mirror
-	mirrorzSite  *mirrors.Site
-	mirrorzInfo  []mirrors.Info
 }
 
 func (cfg *MirrorManager) Hosts() []mirrors.HostConfig            { return cfg.hosts }
 func (cfg *MirrorManager) CacheTTL() time.Duration                { return cfg.cacheTTL }
 func (cfg *MirrorManager) FetchTimeout() time.Duration            { return cfg.fetchTimeout }
 func (cfg *MirrorManager) BaseMirrors() map[string]mirrors.Mirror { return cfg.baseMirrors }
-func (cfg *MirrorManager) MirrorzSite() *mirrors.Site             { return cfg.mirrorzSite }
-func (cfg *MirrorManager) MirrorzInfo() []mirrors.Info            { return cfg.mirrorzInfo }
 
 func (cfg *Config) ToMirrorManager() (*MirrorManager, error) {
 	// Cache TTL
@@ -131,50 +127,10 @@ func (cfg *Config) ToMirrorManager() (*MirrorManager, error) {
 		}
 	}
 
-	// Site
-	var mirrorzSite *mirrors.Site
-	if cfg.Site.URL != "" || cfg.Site.Abbr != "" {
-		mirrorzSite = &mirrors.Site{
-			URL:          cfg.Site.URL,
-			Logo:         cfg.Site.Logo,
-			LogoDarkmode: cfg.Site.LogoDarkmode,
-			Abbr:         cfg.Site.Abbr,
-			Name:         cfg.Site.Name,
-			Homepage:     cfg.Site.Homepage,
-			Issue:        cfg.Site.Issue,
-			Request:      cfg.Site.Request,
-			Email:        cfg.Site.Email,
-			Group:        cfg.Site.Group,
-			Disk:         cfg.Site.Disk,
-			Note:         cfg.Site.Note,
-			Big:          cfg.Site.Big,
-			Disable:      cfg.Site.Disable,
-		}
-	}
-
-	// ISOInfo
-	mirrorzInfo := make([]mirrors.Info, 0, len(cfg.ISOInfo))
-	for _, info := range cfg.ISOInfo {
-		urls := make([]mirrors.ISOURL, 0, len(info.URLs))
-		for _, u := range info.URLs {
-			urls = append(urls, mirrors.ISOURL{
-				Name: u.Name,
-				URL:  u.URL,
-			})
-		}
-		mirrorzInfo = append(mirrorzInfo, mirrors.Info{
-			Distro:   info.Distro,
-			Category: info.Category,
-			URLs:     urls,
-		})
-	}
-
 	return &MirrorManager{
 		hosts:        hosts,
 		cacheTTL:     ttl,
 		fetchTimeout: fetchTimeout,
 		baseMirrors:  baseMirrors,
-		mirrorzSite:  mirrorzSite,
-		mirrorzInfo:  mirrorzInfo,
 	}, nil
 }

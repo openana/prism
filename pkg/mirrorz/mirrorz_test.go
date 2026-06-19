@@ -1,7 +1,10 @@
-package mirrors
+// LLM usage: generated with deepseek-v4-pro and modified manually
+package mirrorz
 
 import (
 	"testing"
+
+	"github.com/openana/prism/pkg/mirrors"
 )
 
 func TestBuildMirrorzStatus_NilSync(t *testing.T) {
@@ -11,8 +14,8 @@ func TestBuildMirrorzStatus_NilSync(t *testing.T) {
 }
 
 func TestBuildMirrorzStatus_Success(t *testing.T) {
-	sync := &Sync{
-		Status:       Success,
+	sync := &mirrors.Sync{
+		Status:       mirrors.Success,
 		LastEnded:    1778201981,
 		NextSchedule: 1780703762,
 	}
@@ -23,8 +26,8 @@ func TestBuildMirrorzStatus_Success(t *testing.T) {
 }
 
 func TestBuildMirrorzStatus_Syncing(t *testing.T) {
-	sync := &Sync{
-		Status:       Syncing,
+	sync := &mirrors.Sync{
+		Status:       mirrors.Syncing,
 		LastStarted:  1781267143,
 		LastUpdate:   1781274491,
 		NextSchedule: 1781296091,
@@ -36,8 +39,8 @@ func TestBuildMirrorzStatus_Syncing(t *testing.T) {
 }
 
 func TestBuildMirrorzStatus_Failed(t *testing.T) {
-	sync := &Sync{
-		Status:     Failed,
+	sync := &mirrors.Sync{
+		Status:     mirrors.Failed,
 		LastEnded:  1780682162,
 		LastUpdate: 1778201981,
 	}
@@ -48,8 +51,8 @@ func TestBuildMirrorzStatus_Failed(t *testing.T) {
 }
 
 func TestBuildMirrorzStatus_Paused(t *testing.T) {
-	sync := &Sync{
-		Status:    Paused,
+	sync := &mirrors.Sync{
+		Status:    mirrors.Paused,
 		LastEnded: 1780682162,
 	}
 	want := "P1780682162"
@@ -59,8 +62,8 @@ func TestBuildMirrorzStatus_Paused(t *testing.T) {
 }
 
 func TestBuildMirrorzStatus_PreSyncing(t *testing.T) {
-	sync := &Sync{
-		Status:      PreSyncing,
+	sync := &mirrors.Sync{
+		Status:      mirrors.PreSyncing,
 		LastStarted: 1780681628,
 	}
 	want := "D1780681628"
@@ -70,8 +73,8 @@ func TestBuildMirrorzStatus_PreSyncing(t *testing.T) {
 }
 
 func TestBuildMirrorzStatus_Unknown(t *testing.T) {
-	sync := &Sync{
-		Status: UnknownStatus,
+	sync := &mirrors.Sync{
+		Status: mirrors.UnknownStatus,
 	}
 	if got := BuildMirrorzStatus(sync); got != "U" {
 		t.Errorf("BuildMirrorzStatus(unknown) = %q, want %q", got, "U")
@@ -79,8 +82,8 @@ func TestBuildMirrorzStatus_Unknown(t *testing.T) {
 }
 
 func TestBuildMirrorzStatus_AllZeros(t *testing.T) {
-	sync := &Sync{
-		Status: Success,
+	sync := &mirrors.Sync{
+		Status: mirrors.Success,
 	}
 	if got := BuildMirrorzStatus(sync); got != "S" {
 		t.Errorf("BuildMirrorzStatus(success with zeros) = %q, want %q", got, "S")

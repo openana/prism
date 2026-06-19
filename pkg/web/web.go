@@ -313,6 +313,17 @@ func (s *Server) resolveLocale(ctx *fasthttp.RequestCtx) *i18n.Locale {
 	return i18n.Resolve(string(ctx.Request.Header.Peek("Accept-Language")))
 }
 
+func (s *Server) HelpURL(name string) string {
+	h, ok := s.help.m[name]
+	if !ok {
+		return ""
+	}
+	if h.URL != "" && h.URL[0] == '/' {
+		return s.cfg.site.URL + h.URL
+	}
+	return h.URL
+}
+
 // For `test` command
 func ParseNewsTemplate(funcMap template.FuncMap) (*template.Template, error) {
 	tpl := template.New("news.html").Funcs(funcMap)

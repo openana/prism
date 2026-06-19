@@ -11,6 +11,7 @@ import (
 	"github.com/openana/prism/pkg/index"
 	"github.com/openana/prism/pkg/log"
 	"github.com/openana/prism/pkg/mirrors"
+	"github.com/openana/prism/pkg/mirrorz"
 	purl "github.com/openana/prism/pkg/url"
 	"github.com/openana/prism/pkg/web"
 	"github.com/rs/zerolog"
@@ -33,18 +34,19 @@ type Router struct {
 	}
 
 	deps struct {
-		logger        zerolog.Logger
-		accessLogger  zerolog.Logger
-		pathResolver  purl.Resolver
-		mirrorGetter  mirrors.Getter
-		indexProvider index.Provider
-		webHandler    web.Handler
+		logger          zerolog.Logger
+		accessLogger    zerolog.Logger
+		pathResolver    purl.Resolver
+		mirrorGetter    mirrors.Getter
+		mirrorzProvider mirrorz.Provider
+		indexProvider   index.Provider
+		webHandler      web.Handler
 	}
 
 	r *router.Router
 }
 
-func NewRouter(cfg RouterConfig, logger zerolog.Logger, accessLogger log.AccessLogger, pathResolver purl.Resolver, mirrorGetter mirrors.Getter, indexProvider index.Provider, webHandler web.Handler) *Router {
+func NewRouter(cfg RouterConfig, logger zerolog.Logger, accessLogger log.AccessLogger, pathResolver purl.Resolver, mirrorGetter mirrors.Getter, mirrorzProvider mirrorz.Provider, indexProvider index.Provider, webHandler web.Handler) *Router {
 	rt := &Router{}
 
 	rt.cfg.protoHeader = cfg.ProtoHeader()
@@ -53,6 +55,7 @@ func NewRouter(cfg RouterConfig, logger zerolog.Logger, accessLogger log.AccessL
 	rt.deps.accessLogger = zerolog.Logger(accessLogger)
 	rt.deps.pathResolver = pathResolver
 	rt.deps.mirrorGetter = mirrorGetter
+	rt.deps.mirrorzProvider = mirrorzProvider
 	rt.deps.indexProvider = indexProvider
 	rt.deps.webHandler = webHandler
 
@@ -213,14 +216,14 @@ func (rt *Router) handleMirrorsRequest(ctx *fasthttp.RequestCtx) {
 }
 
 func (rt *Router) handleMirrorzRequest(ctx *fasthttp.RequestCtx) {
-	mirrorz, age, err := rt.deps.mirrorGetter.Mirrorz()
+	mirrorz, age, err := rt.deps.mirrorzProvider.Mirrorz()
 	if err != nil {
 		rt.deps.logger.Error().Err(err).Msg("mirrorz generation failed")
 		ctx.Error("internal server error", fasthttp.StatusInternalServerError)
 		return
 	}
 
-	ctx.Response.Header.Set("Cache-Control", "public, max-age="+strconv.Itoa(int(rt.deps.mirrorGetter.CacheTTL().Seconds())))
+	ctx.Response.Header.Set("Cache-Control", "public, max-age="+strconv.Itoa(int(rt.deps.mirrorzProvider.CacheTTL().Seconds())))
 	ctx.Response.Header.Set("Age", strconv.Itoa(int(age.Seconds())))
 
 	setHeaderJSON(ctx)

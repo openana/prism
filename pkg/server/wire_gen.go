@@ -11,6 +11,7 @@ import (
 	"github.com/openana/prism/pkg/index"
 	"github.com/openana/prism/pkg/log"
 	"github.com/openana/prism/pkg/mirrors"
+	"github.com/openana/prism/pkg/mirrorz"
 	"github.com/openana/prism/pkg/router"
 	"github.com/openana/prism/pkg/url"
 	"github.com/openana/prism/pkg/web"
@@ -59,6 +60,14 @@ func InitializeServer(cfg *config.Config) (*Server, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
+	mirrorzConfig, err := ProvideMirrorzManagerConfig(cfg)
+	if err != nil {
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	webServerConfig := ProvideWebServerConfig(cfg)
 	cachedProviderConfig, err := ProvideCachedIndexProviderConfig(cfg)
 	if err != nil {
 		cleanup3()
@@ -73,7 +82,6 @@ func InitializeServer(cfg *config.Config) (*Server, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	webServerConfig := ProvideWebServerConfig(cfg)
 	server, err := web.NewServer(webServerConfig, manager, cachedProvider, trieResolver, logger)
 	if err != nil {
 		cleanup3()
@@ -81,7 +89,8 @@ func InitializeServer(cfg *config.Config) (*Server, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	routerRouter := router.NewRouter(routerConfig, logger, accessLogger, trieResolver, manager, cachedProvider, server)
+	mirrorzManager := mirrorz.NewManager(mirrorzConfig, manager, server, logger)
+	routerRouter := router.NewRouter(routerConfig, logger, accessLogger, trieResolver, manager, mirrorzManager, cachedProvider, server)
 	serverServer := NewServer(serverConfig, routerRouter, logger)
 	return serverServer, func() {
 		cleanup3()
@@ -114,6 +123,10 @@ func ProvideTrieResolverConfig(cfg *config.Config) url.TrieResolverConfig {
 
 func ProvideMirrorManagerConfig(cfg *config.Config) (mirrors.ManagerConfig, error) {
 	return cfg.ToMirrorManager()
+}
+
+func ProvideMirrorzManagerConfig(cfg *config.Config) (mirrorz.Config, error) {
+	return cfg.ToMirrorzManager()
 }
 
 func ProvideCachedIndexProviderConfig(cfg *config.Config) (index.CachedProviderConfig, error) {
