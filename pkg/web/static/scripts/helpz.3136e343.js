@@ -122,6 +122,9 @@
       try {
         t.textContent = Mustache.render(tpl.textContent || tpl.innerHTML, ctx).replace(/\n+$/, '');
       } catch (e) { t.textContent = '[Render error: ' + e.message + ']'; }
+
+      delete t.dataset.highlighted;
+      hljs.highlightElement(t);
     }
   }
 

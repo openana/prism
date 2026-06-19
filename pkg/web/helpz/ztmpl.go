@@ -83,6 +83,10 @@ func extractZTMPL(markdown string, config *ZDocConfig, templateCounter, globalMe
 			Global:          attrs["global"] == "true",
 		}
 
+		if block.Lang == "" {
+			block.Lang = "plaintext"
+		}
+
 		if block.Global {
 			block.GlobalMenuID = fmt.Sprintf("globalMenu-%d", *globalMenuCounter)
 			*globalMenuCounter++

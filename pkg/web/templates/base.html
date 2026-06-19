@@ -8,6 +8,9 @@
     <meta name="color-scheme" content="light dark">
     <title>{{ .Title | .Locale.T }}</title>
     <link rel="stylesheet" href="/static/css/pico.min.fbc9a63f.css">
+    {{ if .PageType.IsHelp }}
+    <link rel="stylesheet" href="/static/css/github-dark-dimmed.min.bc1116bf.css">
+    {{ end }}
     <style>
         #mirror-table {
             font-family: monospace;
@@ -120,8 +123,9 @@
 
     </style>
     {{ if .PageType.IsHelp }}
-    <script src="/static/scripts/mustache.min.js"></script>
-    <script src="/static/scripts/mirrorz-help.js"></script>
+    <script src="/static/scripts/mustache.min.d7fd0603.js"></script>
+    <script src="/static/scripts/helpz.3136e343.js"></script>
+    <script src="/static/scripts/highlight.min.b0be6be0.js"></script>
     {{ end }}
 </head>
 

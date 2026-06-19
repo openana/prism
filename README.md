@@ -19,3 +19,5 @@
 - [Octicons](https://github.com/primer/octicons): MIT.
 - [MirrorZ](https://github.com/mirrorz-org/mirrorz): MIT.
 - [MirrorZ Docs](https://github.com/mirrorz-org/mirrorz-docs): CC-BY-NC-SA 4.0 International.
+- [Highlight.js](https://highlightjs.org/): BSD 3-Clause.
+- [Mustache.js](https://github.com/janl/mustache.js/): MIT.
