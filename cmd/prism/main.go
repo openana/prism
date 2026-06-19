@@ -204,11 +204,7 @@ func runTestConfig(cfg *config.Config) error {
 		ok("ToServer")
 	}
 
-	if _, err := cfg.HTTP.ToRouter(); err != nil {
-		fail("HTTP.ToRouter", err)
-	} else {
-		ok("HTTP.ToRouter")
-	}
+	_ = cfg.HTTP.ToRouter()
 
 	if _, err := cfg.ToCachedProvider(); err != nil {
 		fail("ToCachedProvider", err)

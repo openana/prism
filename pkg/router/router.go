@@ -25,12 +25,14 @@ type Handler interface {
 
 type RouterConfig interface {
 	ProtoHeader() string
+	RemoteIPHeader() string
 }
 
 // Router is the top level fasthttp handler provider.
 type Router struct {
 	cfg struct {
-		protoHeader string
+		protoHeader    string
+		remoteIPHeader string
 	}
 
 	deps struct {
@@ -50,6 +52,7 @@ func NewRouter(cfg RouterConfig, logger zerolog.Logger, accessLogger log.AccessL
 	rt := &Router{}
 
 	rt.cfg.protoHeader = cfg.ProtoHeader()
+	rt.cfg.remoteIPHeader = cfg.RemoteIPHeader()
 
 	rt.deps.logger = logger.With().Str("module", "router.Router").Logger()
 	rt.deps.accessLogger = zerolog.Logger(accessLogger)
@@ -74,6 +77,7 @@ func NewRouter(cfg RouterConfig, logger zerolog.Logger, accessLogger log.AccessL
 	r.GET("/help/{cname}", rt.deps.webHandler.HandleHelp)
 	r.GET("/news/latest", rt.deps.webHandler.HandleNewsLatest)
 	r.GET("/news/{date}/{slug}", rt.deps.webHandler.HandleNews)
+	r.GET("/banme", rt.handleBanMe)
 
 	// API routes
 	r.GET("/api/ping", rt.handlePing)
@@ -101,8 +105,17 @@ var (
 func (rt *Router) HandleRequest(ctx *fasthttp.RequestCtx) {
 	rt.r.Handler(ctx)
 
+	ip := ctx.Request.Header.Peek(rt.cfg.remoteIPHeader)
+	if len(ip) != 0 {
+		idx := bytes.IndexByte(ip, ',')
+		if idx >= 0 {
+			ip = ip[:idx]
+		}
+	}
+
 	rt.deps.accessLogger.Info().
 		Int("status", ctx.Response.StatusCode()).
+		Bytes("remote_ip", ip).
 		Bytes("uri", ctx.URI().RequestURI()).
 		Send()
 }
@@ -239,4 +252,8 @@ func (rt *Router) handleMirrorzRequest(ctx *fasthttp.RequestCtx) {
 func (rt *Router) handleMirrorzHead(ctx *fasthttp.RequestCtx) {
 	// TODO: handle as health check endpoint
 	ctx.SetStatusCode(fasthttp.StatusOK)
+}
+
+func (rt *Router) handleBanMe(ctx *fasthttp.RequestCtx) {
+	ctx.SetStatusCode(fasthttp.StatusNoContent)
 }

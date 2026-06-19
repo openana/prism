@@ -50,7 +50,7 @@ func ProvideServerConfig(cfg *config.Config) (ServerConfig, error) {
 	return cfg.ToServer()
 }
 
-func ProvideRouterConfig(cfg *config.Config) (router.RouterConfig, error) {
+func ProvideRouterConfig(cfg *config.Config) router.RouterConfig {
 	return cfg.HTTP.ToRouter()
 }
 

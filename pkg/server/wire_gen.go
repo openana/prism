@@ -24,10 +24,7 @@ func InitializeServer(cfg *config.Config) (*Server, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	routerConfig, err := ProvideRouterConfig(cfg)
-	if err != nil {
-		return nil, nil, err
-	}
+	routerConfig := ProvideRouterConfig(cfg)
 	loggerConfig, err := ProvideLoggerConfig(cfg)
 	if err != nil {
 		return nil, nil, err
@@ -105,7 +102,7 @@ func ProvideServerConfig(cfg *config.Config) (ServerConfig, error) {
 	return cfg.ToServer()
 }
 
-func ProvideRouterConfig(cfg *config.Config) (router.RouterConfig, error) {
+func ProvideRouterConfig(cfg *config.Config) router.RouterConfig {
 	return cfg.HTTP.ToRouter()
 }
 

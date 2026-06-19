@@ -1,21 +1,32 @@
 package config
 
-import (
-	"errors"
-)
-
 type Router struct {
-	protoHeader string
+	protoHeader    string
+	remoteIPHeader string
 }
 
 func (cfg *Router) ProtoHeader() string {
 	return cfg.protoHeader
 }
 
-func (cfg *HTTP) ToRouter() (*Router, error) {
+func (cfg *Router) RemoteIPHeader() string {
+	return cfg.remoteIPHeader
+}
+
+func (cfg *HTTP) ToRouter() *Router {
+	rt := &Router{}
+
 	if cfg.ProtoHeader == "" {
-		return nil, errors.New("empty http.proto_header")
+		rt.protoHeader = "X-Forwarded-Proto"
+	} else {
+		rt.protoHeader = cfg.ProtoHeader
 	}
 
-	return &Router{protoHeader: cfg.ProtoHeader}, nil
+	if cfg.RemoteIPHeader == "" {
+		rt.remoteIPHeader = "X-Forwarded-For"
+	} else {
+		rt.remoteIPHeader = cfg.RemoteIPHeader
+	}
+
+	return rt
 }
