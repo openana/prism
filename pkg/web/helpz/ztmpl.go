@@ -252,6 +252,10 @@ func escapeForGoTemplate(s string) string {
 	return strings.NewReplacer(
 		"{{", `{{"{{"}}`,
 		"}}", `{{"}}"}}`,
+		"<", `{{ "<" }}`,
+		">", `{{ ">" }}`,
+		"<<", `{{ "<<" }}`,
+		">>", `{{ ">>" }}`,
 	).Replace(s)
 }
 
