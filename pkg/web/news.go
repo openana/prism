@@ -133,7 +133,7 @@ func sanitizeSlug(s string) string {
 	return strings.Trim(result, "-")
 }
 
-func loadNews(dir string, logger zerolog.Logger) (articles map[string]*NewsArticle, latest []NewsHeadline, sorted []NewsHeadline, err error) {
+func LoadNews(dir string, logger zerolog.Logger) (articles map[string]*NewsArticle, latest []NewsHeadline, sorted []NewsHeadline, err error) {
 	if dir == "" {
 		return nil, nil, nil, nil
 	}

@@ -306,7 +306,7 @@ func NewServer(cfg ServerConfig, mirrorGetter mirrors.Getter, indexProvider inde
 
 	// Load news articles from filesystem.
 	newsDir := cfg.NewsDir()
-	articles, latest, sortedNews, err := loadNews(newsDir, s.deps.logger)
+	articles, latest, sortedNews, err := LoadNews(newsDir, s.deps.logger)
 	if err != nil {
 		return nil, fmt.Errorf("web.NewServer: %w", err)
 	}
@@ -319,4 +319,14 @@ func NewServer(cfg ServerConfig, mirrorGetter mirrors.Getter, indexProvider inde
 
 func (s *Server) resolveLocale(ctx *fasthttp.RequestCtx) *i18n.Locale {
 	return i18n.Resolve(string(ctx.Request.Header.Peek("Accept-Language")))
+}
+
+// For `test` command
+func ParseNewsTemplate(funcMap template.FuncMap) (*template.Template, error) {
+	tpl := template.New("news.html").Funcs(funcMap)
+	_, err := tpl.ParseFS(templateFS, "base.html", "news.html")
+	if err != nil {
+		return nil, fmt.Errorf("ParseNewsTemplate: %w", err)
+	}
+	return tpl, nil
 }
