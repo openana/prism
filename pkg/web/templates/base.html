@@ -37,17 +37,6 @@
             white-space: nowrap;
         }
 
-        #links {
-            text-align: center;
-            margin-bottom: 10px;
-            clear: both;
-        }
-
-        #links a {
-            margin: 0px 10px;
-            font-size: 0.9em;
-        }
-
         #version {
             text-align: center;
             margin-bottom: 10px;
@@ -121,6 +110,10 @@
             grid-template-columns: 4fr 1fr;
         }
 
+        .mirrors-aside {
+            font-size: .9em;
+        }
+
         .file-path {
             font-family: monospace;
         }
@@ -157,20 +150,6 @@
 
     <footer>
         <div class="container">
-            <section id="links">
-                {{ if (site).Homepage -}}
-                <a class="secondary" href="{{ (site).Homepage }}">{{ .Locale.T "footer.homepage" }}</a>
-                {{- end }}
-                {{ if (site).Issues -}}
-                <a class="secondary" href="{{ (site).Issues }}">{{ .Locale.T "footer.report_issues" }}</a>
-                {{- end }}
-                {{ if (site).Request -}}
-                <a class="secondary" href="{{ (site).Request }}">{{ .Locale.T "footer.request_mirrors" }}</a>
-                {{- end }}
-                {{ if (site).Email -}}
-                <a class="secondary" href="mailto:{{ (site).Email }}">{{ .Locale.T "footer.email" }}</a>
-                {{- end }}
-            </section>
             <section id="version">
                 {{ .Locale.T "footer.powered_by" (version) }}
             </section>

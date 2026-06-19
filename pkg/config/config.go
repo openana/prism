@@ -27,6 +27,13 @@ type Config struct {
 	ISOInfo []ISOInfo `yaml:"iso_info"`
 
 	News NewsConfig `yaml:"news"`
+
+	Links []LinkItem `yaml:"links"`
+}
+
+type LinkItem struct {
+	Name string `yaml:"name"`
+	URL  string `yaml:"url"`
 }
 
 type NewsConfig struct {
@@ -114,6 +121,8 @@ type StaticMirror struct {
 
 type Site struct {
 	URL          string `yaml:"url"`
+	URLv4        string `yaml:"url_v4"`
+	URLv6        string `yaml:"url_v6"`
 	Logo         string `yaml:"logo"`
 	LogoDarkmode string `yaml:"logo_darkmode"`
 	Abbr         string `yaml:"abbr"`

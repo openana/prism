@@ -31,6 +31,8 @@ func (cfg *Config) ToWebServer() *WebServer {
 	site := web.Site{
 		Name:     cfg.Site.Name,
 		URL:      cfg.Site.URL,
+		URLv4:    cfg.Site.URLv4,
+		URLv6:    cfg.Site.URLv6,
 		Homepage: cfg.Site.Homepage,
 		Issues:   cfg.Site.Issue,
 		Request:  cfg.Site.Request,
@@ -40,6 +42,15 @@ func (cfg *Config) ToWebServer() *WebServer {
 		Note:     cfg.Site.Note,
 		Big:      cfg.Site.Big,
 	}
+
+	links := make([]web.LinkItem, len(cfg.Links))
+	for i, l := range cfg.Links {
+		links[i] = web.LinkItem{
+			Name: l.Name,
+			URL:  l.URL,
+		}
+	}
+	site.Links = links
 
 	isoInfo := make([]web.ISOInfo, len(cfg.ISOInfo))
 	for i, info := range cfg.ISOInfo {

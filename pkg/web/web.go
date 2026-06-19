@@ -92,6 +92,8 @@ type Handler interface {
 type Site struct {
 	Name     string
 	URL      string
+	URLv4    string
+	URLv6    string
 	Homepage string
 	Issues   string
 	Request  string
@@ -100,6 +102,12 @@ type Site struct {
 	Disk     string
 	Note     string
 	Big      string
+	Links    []LinkItem
+}
+
+type LinkItem struct {
+	Name string
+	URL  string
 }
 
 type ISODownload struct {

@@ -51,6 +51,7 @@ type MirrorPageData struct {
 	PageBase
 	Mirrors    []Mirror
 	LatestNews []NewsHeadline
+	Site       *Site
 }
 
 func (s *Server) HandleMirrors(ctx *fasthttp.RequestCtx) {
@@ -74,6 +75,7 @@ func (s *Server) HandleMirrors(ctx *fasthttp.RequestCtx) {
 			},
 			Mirrors:    mirrors,
 			LatestNews: s.news.latest,
+			Site:       &s.cfg.site,
 		}); err != nil {
 			s.deps.logger.Error().Err(err).Msg("failed to render template")
 		}
