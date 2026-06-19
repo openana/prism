@@ -117,6 +117,10 @@
             grid-template-columns: 1fr 4fr;
         }
 
+        .mirrors-grid {
+            grid-template-columns: 4fr 1fr;
+        }
+
         .file-path {
             font-family: monospace;
         }
@@ -142,6 +146,7 @@
                 <li><a href="/downloads" class="contrast">{{ if .PageType.IsDownloads }}<button>{{ .Locale.T "nav.downloads" }}</button>{{ else }}{{ .Locale.T "nav.downloads" }}{{ end }}</a></li>
                 <li><a href="/status" class="contrast">{{ if .PageType.IsStatus }}<button>{{ .Locale.T "nav.status" }}</button>{{ else }}{{ .Locale.T "nav.status" }}{{ end }}</a></li>
                 <li><a href="/help/start" class="contrast">{{ if .PageType.IsHelp }}<button>{{ .Locale.T "nav.help" }}</button>{{ else }}{{ .Locale.T "nav.help" }}{{ end }}</a></li>
+                <li><a href="/news/latest" class="contrast">{{ if .PageType.IsNews }}<button>{{ .Locale.T "nav.news" }}</button>{{ else }}{{ .Locale.T "nav.news" }}{{ end }}</a></li>
             </ul>
         </nav>
     </header>

@@ -8,6 +8,7 @@ type WebServer struct {
 	site        web.Site
 	isoInfo     []web.ISOInfo
 	helpMirrors []web.HelpMirrorConfig
+	newsDir     string
 }
 
 func (cfg *WebServer) Site() web.Site {
@@ -20,6 +21,10 @@ func (cfg *WebServer) ISOInfo() []web.ISOInfo {
 
 func (cfg *WebServer) HelpMirrors() []web.HelpMirrorConfig {
 	return cfg.helpMirrors
+}
+
+func (cfg *WebServer) NewsDir() string {
+	return cfg.newsDir
 }
 
 func (cfg *Config) ToWebServer() *WebServer {
@@ -96,5 +101,6 @@ func (cfg *Config) ToWebServer() *WebServer {
 		site:        site,
 		isoInfo:     isoInfo,
 		helpMirrors: helpMirrors,
+		newsDir:     cfg.News.Dir,
 	}
 }

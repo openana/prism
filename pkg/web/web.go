@@ -57,6 +57,7 @@ const (
 	PageTypeDownloads
 	PageTypeBrowse
 	PageTypeHelp
+	PageTypeNews
 	PageNotFound
 )
 
@@ -66,6 +67,7 @@ func (t PageType) IsStatus() bool    { return t == PageTypeStatus }
 func (t PageType) IsDownloads() bool { return t == PageTypeDownloads }
 func (t PageType) IsBrowse() bool    { return t == PageTypeBrowse }
 func (t PageType) IsHelp() bool      { return t == PageTypeHelp }
+func (t PageType) IsNews() bool      { return t == PageTypeNews }
 func (t PageType) IsNotFound() bool  { return t == PageNotFound }
 
 // PageBase holds fields common to all page data types passed to base.html.
@@ -83,6 +85,8 @@ type Handler interface {
 	HandleStatic(ctx *fasthttp.RequestCtx)
 	HandleBrowse(ctx *fasthttp.RequestCtx)
 	HandleHelp(ctx *fasthttp.RequestCtx)
+	HandleNews(ctx *fasthttp.RequestCtx)
+	HandleNewsLatest(ctx *fasthttp.RequestCtx)
 }
 
 type Site struct {
@@ -121,6 +125,7 @@ type ServerConfig interface {
 	Site() Site
 	ISOInfo() []ISOInfo
 	HelpMirrors() []HelpMirrorConfig
+	NewsDir() string
 }
 
 type Server struct {
@@ -147,11 +152,18 @@ type Server struct {
 		notFound        *template.Template
 		help            map[string]*HelpPage // cname -> help page
 		helpStart       *template.Template
+		news            *template.Template
 	}
 
 	help struct {
 		sorted []HelpLink
 		m      map[string]HelpLink // name -> HelpLink
+	}
+
+	news struct {
+		articles map[string]*NewsArticle // key: "date/slug"
+		latest   []NewsHeadline          // top 3, for mirrors aside
+		sorted   []NewsHeadline          // all published, for news page aside
 	}
 }
 
@@ -288,6 +300,19 @@ func NewServer(cfg ServerConfig, mirrorGetter mirrors.Getter, indexProvider inde
 
 	s.help.m = helps
 	s.help.sorted = sorted
+
+	// Parse news template.
+	s.pages.news = parsePage("news.html")
+
+	// Load news articles from filesystem.
+	newsDir := cfg.NewsDir()
+	articles, latest, sortedNews, err := loadNews(newsDir, s.deps.logger)
+	if err != nil {
+		return nil, fmt.Errorf("web.NewServer: %w", err)
+	}
+	s.news.articles = articles
+	s.news.latest = latest
+	s.news.sorted = sortedNews
 
 	return s, nil
 }

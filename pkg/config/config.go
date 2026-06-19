@@ -25,6 +25,12 @@ type Config struct {
 	Site Site `yaml:"site"`
 
 	ISOInfo []ISOInfo `yaml:"iso_info"`
+
+	News NewsConfig `yaml:"news"`
+}
+
+type NewsConfig struct {
+	Dir string `yaml:"dir"`
 }
 
 type Log struct {

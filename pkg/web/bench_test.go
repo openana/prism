@@ -73,6 +73,7 @@ type mockServerConfig struct {
 func (m *mockServerConfig) Site() Site                      { return m.site }
 func (m *mockServerConfig) ISOInfo() []ISOInfo              { return m.isoInfo }
 func (m *mockServerConfig) HelpMirrors() []HelpMirrorConfig { return nil }
+func (m *mockServerConfig) NewsDir() string                 { return "" }
 
 // ---------------------------------------------------------------------------
 // test data helpers

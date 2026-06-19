@@ -49,7 +49,8 @@ func (s *Server) FormatMirrors(src *mirrors.Mirror) Mirror {
 
 type MirrorPageData struct {
 	PageBase
-	Mirrors []Mirror
+	Mirrors    []Mirror
+	LatestNews []NewsHeadline
 }
 
 func (s *Server) HandleMirrors(ctx *fasthttp.RequestCtx) {
@@ -71,7 +72,8 @@ func (s *Server) HandleMirrors(ctx *fasthttp.RequestCtx) {
 				Locale:   s.resolveLocale(ctx),
 				PageType: PageTypeMirrors,
 			},
-			Mirrors: mirrors,
+			Mirrors:    mirrors,
+			LatestNews: s.news.latest,
 		}); err != nil {
 			s.deps.logger.Error().Err(err).Msg("failed to render template")
 		}

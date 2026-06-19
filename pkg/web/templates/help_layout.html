@@ -1,18 +1,24 @@
 {{ define "content" }}
 <article>
     <header>
-        <img class="header-icon" src="/static/img/question-24.svg" alt="">{{ .Locale.T "help.title" }}
+        <img class="header-icon" src="/static/img/question-24.svg" alt=""><strong>{{ .Locale.T "help.title" }}</strong>
     </header>
     <div class="grid help-grid">
         <aside>
-            <nav>
-                <h3>{{ .Locale.T "help.sidebar_title" }}</h3>
-                <ul>
-                    {{ range .HelpLinks }}
-                    <li>{{ if eq $.Cname .Cname }}<button class="outline"><a href="{{ .URL }}">{{ .Cname }}</a></button>{{ else }}<a href="{{ .URL }}">{{ .Cname }}</a>{{ end }}</li>
+            <fieldset>
+                <legend><strong>{{ .Locale.T "help.sidebar_title" }}</strong></legend>
+                {{ range .HelpLinks }}
+                <label>
+                    {{ if eq $.Cname .Cname }}
+                    <strong>
+                        <a href="{{ .URL }}">{{ .Cname }}</a>
+                    </strong>
+                    {{ else }}
+                    <a href="{{ .URL }}" style="text-decoration: none;">{{ .Cname }}</a>
                     {{ end }}
-                </ul>
-            </nav>
+                </label>
+                {{ end }}
+            </fieldset>
         </aside>
         {{ template "help_body" . }}
     </div>

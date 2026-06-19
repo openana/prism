@@ -1,0 +1,30 @@
+{{ define "content" }}
+<article>
+    <header>
+        <img class="header-icon" src="/static/img/megaphone-24.svg" alt=""><strong>{{ .Locale.T "news.title" }}</strong>
+    </header>
+    <div class="grid help-grid">
+        <aside>
+            <fieldset>
+                <legend><strong>{{ .Locale.T "news.sidebar_title" }}</strong></legend>
+                {{ range .NewsLinks }}
+                <label>
+                    {{ if eq $.CurrentSlug .Slug }}
+                    <strong>
+                        <a href="/news/{{ .Date }}/{{ .Slug }}">{{ .Title }}</a>
+                    </strong>
+                    {{ else }}
+                        <a href="/news/{{ .Date }}/{{ .Slug }}" style="text-decoration: none;">{{ .Title }}</a>
+                    {{ end }}
+                </label>
+                {{ end }}
+            </fieldset>
+        </aside>
+        <div>
+            <h1>{{ .Article.Title }}</h1>
+            <p><small>{{ .Locale.T "news.published" .Article.Date }}</small></p>
+            {{ .Article.BodyHTML }}
+        </div>
+    </div>
+</article>
+{{ end }}
