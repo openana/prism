@@ -1,11 +1,16 @@
 ## TODOs
 
+#### Entrypoint
+- [ ] Add config testing
+- [ ] Add template testing
+- [ ] Add news compile testing
+
 #### Mirrors
 - [x] Add cname database
 
 #### Web
-- [ ] Add news (compile from markdown from local directory at startup)
-- [ ] Add mirrors help (embed pre-compiled html templates)
+- [x] Add news (compile from markdown from local directory at startup)
+- [x] Add mirrors help (embed pre-compiled html templates)
 
 #### Testing
 - [x] Mirrors api stress-test

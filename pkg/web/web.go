@@ -85,6 +85,7 @@ type Handler interface {
 	HandleStatic(ctx *fasthttp.RequestCtx)
 	HandleBrowse(ctx *fasthttp.RequestCtx)
 	HandleHelp(ctx *fasthttp.RequestCtx)
+	HandleHelpIndex(ctx *fasthttp.RequestCtx)
 	HandleNews(ctx *fasthttp.RequestCtx)
 	HandleNewsLatest(ctx *fasthttp.RequestCtx)
 }
@@ -159,7 +160,6 @@ type Server struct {
 		browse          *template.Template
 		notFound        *template.Template
 		help            map[string]*HelpPage // cname -> help page
-		helpStart       *template.Template
 		news            *template.Template
 	}
 
@@ -288,14 +288,6 @@ func NewServer(cfg ServerConfig, mirrorGetter mirrors.Getter, indexProvider inde
 			}
 		}
 	}
-
-	// Add /help/start
-	s.pages.helpStart = template.Must(template.New("help_start.html").Funcs(funcMap).ParseFS(
-		templateFS,
-		"base.html",
-		"help_layout.html",
-		"help_start.html",
-	))
 
 	sorted := make([]HelpLink, 0, len(helps))
 	for _, h := range helps {
