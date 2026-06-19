@@ -4,52 +4,51 @@
         <li><a href="/mirrors" class="secondary">&larr; {{ .Locale.T "nav.mirrors" }}</a></li>
     </ul>
 </nav>
-<hgroup>
-    <h2><img class="header-icon" src="/static/img/file-directory-24.svg" alt="">{{ .Locale.T "browse.title"
-        }}</h2>
-</hgroup>
-<div class="overflow-auto">
-    <nav>
-        <ul>
-            <li><a href="/mirrors">{{ .Locale.T "browse.mirrors" }}</a></li>
+<article>
+    <header>
+        <img class="header-icon" src="/static/img/file-directory-24.svg" alt="">{{ .Locale.T "browse.title" }}
+    </header>
+    <div class="overflow-auto">
+        <fieldset>
+            <a href="/mirrors">{{ .Locale.T "browse.mirrors" }}</a>
             {{ range .Breadcrumbs }}
-            <li>></li>
-            <li><a href="{{ .URL }}">{{ .Label }}</a></li>
+            >
+            <a href="{{ .URL }}">{{ .Label }}</a>
             {{ end }}
-        </ul>
-    </nav>
-</div>
-{{ if .Entries }}
-<div class="overflow-auto">
-    <table class="striped" id="browse-table">
-        <thead>
-            <tr>
-                <th>{{ .Locale.T "browse.th_name" }}</th>
-                <th>{{ .Locale.T "browse.th_size" }}</th>
-                <th>{{ .Locale.T "browse.th_modified" }}</th>
-            </tr>
-        </thead>
-        <tbody>
-            {{ range .Entries }}
-            <tr>
-                <td>
-                    {{ if eq .Type "file" }}
-                    <img class="browser-icon" src="/static/img/file-16.svg" alt="">
-                    {{ else if eq .Type "directory" }}
-                    <img class="browser-icon" src="/static/img/file-directory-16.svg" alt="">
-                    {{ else }}
-                    <img class="browser-icon" src="/static/img/question-16.svg" alt="">
-                    {{ end }}
-                    <a href="{{ .URL }}">{{ .Name }}</a>
-                </td>
-                <td>{{ if .Size }}{{ .Size }}{{ end }}</td>
-                <td>{{ if .Mtime }}{{ .Mtime }}{{ end }}</td>
-            </tr>
-            {{ end }}
-        </tbody>
-    </table>
-</div>
-{{ else }}
-<p><em>{{ .Locale.T "browse.empty" }}</em></p>
-{{ end }}
+        </fieldset>
+    </div>
+    {{ if .Entries }}
+    <div class="overflow-auto">
+        <table class="striped" id="browse-table">
+            <thead>
+                <tr>
+                    <th>{{ .Locale.T "browse.th_name" }}</th>
+                    <th>{{ .Locale.T "browse.th_size" }}</th>
+                    <th>{{ .Locale.T "browse.th_modified" }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{ range .Entries }}
+                <tr>
+                    <td>
+                        {{ if eq .Type "file" }}
+                        <img class="browser-icon" src="/static/img/file-16.svg" alt="">
+                        {{ else if eq .Type "directory" }}
+                        <img class="browser-icon" src="/static/img/file-directory-16.svg" alt="">
+                        {{ else }}
+                        <img class="browser-icon" src="/static/img/question-16.svg" alt="">
+                        {{ end }}
+                        <a href="{{ .URL }}">{{ .Name }}</a>
+                    </td>
+                    <td>{{ if .Size }}{{ .Size }}{{ end }}</td>
+                    <td>{{ if .Mtime }}{{ .Mtime }}{{ end }}</td>
+                </tr>
+                {{ end }}
+            </tbody>
+        </table>
+    </div>
+    {{ else }}
+    <p><em>{{ .Locale.T "browse.empty" }}</em></p>
+    {{ end }}
+</article>
 {{ end }}

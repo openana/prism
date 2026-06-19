@@ -60,7 +60,13 @@ const (
 	PageNotFound
 )
 
-func (t PageType) IsHelp() bool { return t == PageTypeHelp }
+func (t PageType) IsDefault() bool   { return t == PageTypeDefault }
+func (t PageType) IsMirrors() bool   { return t == PageTypeMirrors || t == PageTypeBrowse }
+func (t PageType) IsStatus() bool    { return t == PageTypeStatus }
+func (t PageType) IsDownloads() bool { return t == PageTypeDownloads }
+func (t PageType) IsBrowse() bool    { return t == PageTypeBrowse }
+func (t PageType) IsHelp() bool      { return t == PageTypeHelp }
+func (t PageType) IsNotFound() bool  { return t == PageNotFound }
 
 // PageBase holds fields common to all page data types passed to base.html.
 type PageBase struct {
@@ -140,6 +146,7 @@ type Server struct {
 		browse          *template.Template
 		notFound        *template.Template
 		help            map[string]*HelpPage // cname -> help page
+		helpStart       *template.Template
 	}
 
 	help struct {
@@ -261,6 +268,14 @@ func NewServer(cfg ServerConfig, mirrorGetter mirrors.Getter, indexProvider inde
 			}
 		}
 	}
+
+	// Add /help/start
+	s.pages.helpStart = template.Must(template.New("help_start.html").Funcs(funcMap).ParseFS(
+		templateFS,
+		"base.html",
+		"help_layout.html",
+		"help_start.html",
+	))
 
 	sorted := make([]HelpLink, 0, len(helps))
 	for _, h := range helps {

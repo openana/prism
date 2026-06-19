@@ -1,20 +1,20 @@
 {{ define "content" }}
-<nav>
-    <ul>
-        <li><a href="/mirrors" class="secondary">&larr; {{ .Locale.T "nav.mirrors" }}</a></li>
-    </ul>
-</nav>
-<div class="grid help-grid">
-    <aside>
-        <nav>
-            <h3>{{ .Locale.T "help.sidebar_title" }}</h3>
-            <ul>
-                {{ range .HelpLinks }}
-                <li><a href="{{ .URL }}">{{ .Cname }}</a></li>
-                {{ end }}
-            </ul>
-        </nav>
-    </aside>
-    {{ template "help_body" . }}
-</div>
+<article>
+    <header>
+        <img class="header-icon" src="/static/img/question-24.svg" alt="">{{ .Locale.T "help.title" }}
+    </header>
+    <div class="grid help-grid">
+        <aside>
+            <nav>
+                <h3>{{ .Locale.T "help.sidebar_title" }}</h3>
+                <ul>
+                    {{ range .HelpLinks }}
+                    <li>{{ if eq $.Cname .Cname }}<button class="outline"><a href="{{ .URL }}">{{ .Cname }}</a></button>{{ else }}<a href="{{ .URL }}">{{ .Cname }}</a>{{ end }}</li>
+                    {{ end }}
+                </ul>
+            </nav>
+        </aside>
+        {{ template "help_body" . }}
+    </div>
+</article>
 {{ end }}

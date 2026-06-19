@@ -1,40 +1,42 @@
 {{ define "content" }}
-<hgroup>
-    <h2><img class="header-icon" src="/static/img/graph-bar-horizontal-24.svg" alt="">{{ .Locale.T "status.title" }}
-    </h2>
-</hgroup>
-<div class="overflow-auto">
-    <table class="striped" id="status-table">
-        <thead>
-            <tr>
-                <th>{{ .Locale.T "status.th_name" }}</th>
-                <th>{{ .Locale.T "status.th_type" }}</th>
-                <th>{{ .Locale.T "status.th_last_update" }}</th>
-                <th>{{ .Locale.T "status.th_last_started" }}</th>
-                <th>{{ .Locale.T "status.th_last_ended" }}</th>
-                <th>{{ .Locale.T "status.th_next_schedule" }}</th>
-                <th>{{ .Locale.T "status.th_upstream" }}</th>
-                <th>{{ .Locale.T "status.th_status" }}</th>
-                <th>{{ .Locale.T "status.th_size" }}</th>
-            </tr>
-        </thead>
-        <tbody>
-            {{ range .Mirrors }}
-            {{ if .Name }}
-            <tr class="{{ .StatusClass }}">
-                <td>{{ .Name }}</td>
-                <td>{{ if .Type }}{{ .Type }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
-                <td>{{ if .LastUpdate }}{{ .LastUpdate }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
-                <td>{{ if .LastStarted }}{{ .LastStarted }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
-                <td>{{ if .LastEnded }}{{ .LastEnded }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
-                <td>{{ if .NextSchedule }}{{ .NextSchedule }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
-                <td>{{ if .Upstream }}{{ .Upstream }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
-                <td>{{ if .Status }}{{ .Status }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
-                <td>{{ if .Size }}{{ .Size }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
-            </tr>
-            {{ end }}
-            {{ end }}
-        </tbody>
-    </table>
-</div>
+<article>
+    <header>
+        <img class="header-icon" src="/static/img/graph-bar-horizontal-24.svg" alt="">{{ .Locale.T "status.title" }}
+    </header>
+    <div class="overflow-auto">
+        <table class="striped" id="status-table">
+            <thead>
+                <tr>
+                    <th>{{ .Locale.T "status.th_name" }}</th>
+                    <th>{{ .Locale.T "status.th_type" }}</th>
+                    <th>{{ .Locale.T "status.th_last_update" }}</th>
+                    <th>{{ .Locale.T "status.th_last_started" }}</th>
+                    <th>{{ .Locale.T "status.th_last_ended" }}</th>
+                    <th>{{ .Locale.T "status.th_next_schedule" }}</th>
+                    <th>{{ .Locale.T "status.th_upstream" }}</th>
+                    <th>{{ .Locale.T "status.th_status" }}</th>
+                    <th>{{ .Locale.T "status.th_size" }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{ range .Mirrors }}
+                {{ if .Name }}
+                <tr class="{{ .StatusClass }}">
+                    <td>{{ .Name }}</td>
+                    <td>{{ if .Type }}{{ .Type }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
+                    <td>{{ if .LastUpdate }}{{ .LastUpdate }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
+                    <td>{{ if .LastStarted }}{{ .LastStarted }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
+                    <td>{{ if .LastEnded }}{{ .LastEnded }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
+                    <td>{{ if .NextSchedule }}{{ .NextSchedule }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}
+                    </td>
+                    <td>{{ if .Upstream }}{{ .Upstream }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
+                    <td>{{ if .Status }}{{ .Status }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
+                    <td>{{ if .Size }}{{ .Size }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
+                </tr>
+                {{ end }}
+                {{ end }}
+            </tbody>
+        </table>
+    </div>
+</article>
 {{ end }}

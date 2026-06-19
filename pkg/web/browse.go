@@ -105,7 +105,11 @@ func (s *Server) HandleBrowse(ctx *fasthttp.RequestCtx) {
 	breadcrumbs := buildBreadcrumbs(string(rawPath))
 
 	page := BrowsePageData{
-		PageBase:    PageBase{Locale: locale},
+		PageBase: PageBase{
+			Title:    "nav.browse",
+			PageType: PageTypeBrowse,
+			Locale:   locale,
+		},
 		Path:        string(rawPath),
 		Breadcrumbs: breadcrumbs,
 		Entries:     entries,

@@ -1,30 +1,33 @@
 {{ define "content" }}
-<hgroup>
-    <h2><img class="header-icon" src="/static/img/mirror-24.svg" alt="">{{ .Locale.T "mirrors.title" }}</h2>
-</hgroup>
-<div class="overflow-auto">
-    <table class="striped" id="mirror-table">
-        <thead>
-            <tr>
-                <th>{{ .Locale.T "mirrors.th_name" }}</th>
-                <th>{{ .Locale.T "mirrors.th_description" }}</th>
-                <th>{{ .Locale.T "mirrors.th_type" }}</th>
-                <th>{{ .Locale.T "mirrors.th_last_update" }}</th>
-                <th>{{ .Locale.T "mirrors.th_help" }}</th>
-            </tr>
-        </thead>
-        <tbody>
-            {{ range .Mirrors }}
-            <tr>
-                <td>{{ if .URL }}<a href="{{ .URL }}">{{ .Name }}</a>{{ else }}{{ .Name }}{{ end }}</td>
-                <td>{{ if .Desc }}{{ .Desc }}{{ else }}{{ $.Locale.T "mirrors.na" }}{{ end }}</td>
-                <td>{{ if .Type }}{{ .Type }}{{ else }}{{ $.Locale.T "mirrors.na" }}{{ end }}</td>
-                <td>{{ if .LastUpdate }}{{ .LastUpdate }}{{ else }}{{ $.Locale.T "mirrors.na" }}{{ end }}</td>
-                <td>{{ if .Help }}<a href="{{ .Help }}">{{ $.Locale.T "mirrors.help_link" }}</a>{{ else }}{{ $.Locale.T
-                    "mirrors.na" }}{{ end }}</td>
-            </tr>
-            {{ end }}
-        </tbody>
-    </table>
-</div>
+<article>
+    <header>
+        <img class="header-icon" src="/static/img/mirror-24.svg" alt="">{{ .Locale.T "mirrors.title" }}
+    </header>
+    <div class="overflow-auto">
+        <table class="striped" id="mirror-table">
+            <thead>
+                <tr>
+                    <th>{{ .Locale.T "mirrors.th_name" }}</th>
+                    <th>{{ .Locale.T "mirrors.th_description" }}</th>
+                    <th>{{ .Locale.T "mirrors.th_type" }}</th>
+                    <th>{{ .Locale.T "mirrors.th_last_update" }}</th>
+                    <th>{{ .Locale.T "mirrors.th_help" }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{ range .Mirrors }}
+                <tr>
+                    <td>{{ if .URL }}<a href="{{ .URL }}">{{ .Name }}</a>{{ else }}{{ .Name }}{{ end }}</td>
+                    <td>{{ if .Desc }}{{ .Desc }}{{ else }}{{ $.Locale.T "mirrors.na" }}{{ end }}</td>
+                    <td>{{ if .Type }}{{ .Type }}{{ else }}{{ $.Locale.T "mirrors.na" }}{{ end }}</td>
+                    <td>{{ if .LastUpdate }}{{ .LastUpdate }}{{ else }}{{ $.Locale.T "mirrors.na" }}{{ end }}</td>
+                    <td>{{ if .Help }}<a href="{{ .Help }}">{{ $.Locale.T "mirrors.help_link" }}</a>{{ else }}{{
+                        $.Locale.T
+                        "mirrors.na" }}{{ end }}</td>
+                </tr>
+                {{ end }}
+            </tbody>
+        </table>
+    </div>
+</article>
 {{ end }}

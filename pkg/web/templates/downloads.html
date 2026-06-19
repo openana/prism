@@ -1,27 +1,27 @@
 {{ define "content" }}
-<hgroup>
-    <h2><img class="header-icon" src="/static/img/download-24.svg" alt="">{{ .Locale.T "downloads.title" }}</h2>
-</hgroup>
-
 {{ range .Categories }}
-<hgroup>
-    <h3>{{ .Category | catAlias | $.Locale.T  }}</h3>
-</hgroup>
-<div class="overflow-auto">
-    <table class="striped" id="downloads-table">
-        <thead>
-            <tr>
-                <th>{{ $.Locale.T "downloads.th_distro" }}</th>
-            </tr>
-        </thead>
-        <tbody>
-            {{ range .Distros }}
-            <tr>
-                <td><a href="/downloads/{{ . }}">{{ . }}</a></td>
-            </tr>
-            {{ end }}
-        </tbody>
-    </table>
-</div>
+<article>
+    <header><img class="header-icon" src="/static/img/apps-24.svg" alt="">{{ .Category | catAlias | $.Locale.T }}
+    </header>
+    <div class="overflow-auto">
+        <table class="striped" id="downloads-table">
+            <thead>
+                <tr>
+                    <th>{{ $.Locale.T "downloads.th_distro" }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{ range .Distros }}
+                <tr>
+                    <td>
+                        <img class="browser-icon" src="/static/img/tag-16.svg" alt="">
+                        <a href="/downloads/{{ . }}">{{ . }}</a>
+                    </td>
+                </tr>
+                {{ end }}
+            </tbody>
+        </table>
+    </div>
+</article>
 {{ end }}
 {{ end }}

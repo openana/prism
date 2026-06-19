@@ -13,7 +13,7 @@ type HelpPageData struct {
 	PageBase
 	Endpoint  string
 	HelpLinks []HelpLink
-	HelpTitle string
+	Cname     string
 }
 
 // HelpPage bundles locale-specific help templates with the endpoint URL.
@@ -33,6 +33,26 @@ func (s *Server) HandleHelp(ctx *fasthttp.RequestCtx) {
 	cnameVal, ok := ctx.UserValue("cname").(string)
 	if !ok || cnameVal == "" {
 		s.handleNotFound(ctx, "/mirrors", "nav.mirrors")
+		return
+	}
+
+	if cnameVal == "start" {
+		locale := s.resolveLocale(ctx)
+		ctx.SetContentType("text/html; charset=utf-8")
+		ctx.SetBodyStreamWriter(func(w *bufio.Writer) {
+			if err := s.pages.helpStart.ExecuteTemplate(w, "base", HelpPageData{
+				PageBase: PageBase{
+					Title:    "help.title",
+					Locale:   locale,
+					PageType: PageTypeHelp,
+				},
+				HelpLinks: s.help.sorted,
+			}); err != nil {
+				s.deps.logger.Error().Err(err).Str("cname", cnameVal).Msg("failed to render help template")
+			}
+			w.Flush()
+		})
+
 		return
 	}
 
@@ -64,6 +84,7 @@ func (s *Server) HandleHelp(ctx *fasthttp.RequestCtx) {
 			},
 			Endpoint:  helpPage.Endpoint,
 			HelpLinks: s.help.sorted,
+			Cname:     cnameVal,
 		}); err != nil {
 			s.deps.logger.Error().Err(err).Str("cname", cnameVal).Msg("failed to render help template")
 		}

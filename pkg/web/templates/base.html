@@ -114,6 +114,10 @@
             grid-template-columns: 1fr 4fr;
         }
 
+        .file-path {
+            font-family: monospace;
+        }
+
     </style>
     {{ if .PageType.IsHelp }}
     <script src="/static/scripts/mustache.min.js"></script>
@@ -130,9 +134,10 @@
                 </li>
             </ul>
             <ul>
-                <li><a href="/mirrors" class="secondary">{{ .Locale.T "nav.mirrors" }}</a></li>
-                <li><a href="/downloads" class="secondary">{{ .Locale.T "nav.downloads" }}</a></li>
-                <li><a href="/status" class="secondary">{{ .Locale.T "nav.status" }}</a></li>
+                <li><a href="/mirrors" class="contrast">{{ if .PageType.IsMirrors }}<button>{{ .Locale.T "nav.mirrors" }}</button>{{ else }}{{ .Locale.T "nav.mirrors" }}{{ end }}</a></li>
+                <li><a href="/downloads" class="contrast">{{ if .PageType.IsDownloads }}<button>{{ .Locale.T "nav.downloads" }}</button>{{ else }}{{ .Locale.T "nav.downloads" }}{{ end }}</a></li>
+                <li><a href="/status" class="contrast">{{ if .PageType.IsStatus }}<button>{{ .Locale.T "nav.status" }}</button>{{ else }}{{ .Locale.T "nav.status" }}{{ end }}</a></li>
+                <li><a href="/help/start" class="contrast">{{ if .PageType.IsHelp }}<button>{{ .Locale.T "nav.help" }}</button>{{ else }}{{ .Locale.T "nav.help" }}{{ end }}</a></li>
             </ul>
         </nav>
     </header>

@@ -4,26 +4,29 @@
         <li><a href="/downloads" class="secondary">&larr; {{ .Locale.T "nav.downloads" }}</a></li>
     </ul>
 </nav>
-<hgroup>
-    <h3>{{ .Info.Distro }}</h3>
-    <p>{{ .Info.Category | catAlias | .Locale.T }}</p>
-</hgroup>
-<div class="overflow-auto">
-    <table class="striped" id="downloads-table">
-        <thead>
-            <tr>
-                <th>{{ .Locale.T "downloads_detail.th_name" }}</th>
-                <th>{{ .Locale.T "downloads_detail.th_url" }}</th>
-            </tr>
-        </thead>
-        <tbody>
-            {{ range .Info.URLs }}
-            <tr>
-                <td>{{ .Name }}</td>
-                <td><a href="{{ .URL }}">{{ .URL }}</a></td>
-            </tr>
-            {{ end }}
-        </tbody>
-    </table>
-</div>
+<article>
+    <header><img class="header-icon" src="/static/img/tag-24.svg" alt="">{{ .Info.Distro }}
+    </header>
+    <div class="overflow-auto">
+        <table class="striped" id="downloads-table">
+            <thead>
+                <tr>
+                    <th>{{ .Locale.T "downloads_detail.th_name" }}</th>
+                    <th>{{ .Locale.T "downloads_detail.th_url" }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{ range .Info.URLs }}
+                <tr>
+                    <td>
+                        <img class="browser-icon" src="/static/img/package-16.svg" alt="">
+                        {{ .Name }}
+                    </td>
+                    <td><a href="{{ .URL }}">{{ .URL }}</a></td>
+                </tr>
+                {{ end }}
+            </tbody>
+        </table>
+    </div>
+</article>
 {{ end }}

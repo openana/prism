@@ -97,7 +97,7 @@ func buildTemplate(page *Page) string {
 	sb.WriteString("{{ define \"help_body\" }}\n")
 	// Hidden input supplies endpoint to mirrorz-help.js (mustache.js reads it).
 	sb.WriteString("<input data-var=\"endpoint\" data-global value=\"{{ .Endpoint }}\" hidden>\n")
-	sb.WriteString("<article>\n")
+	sb.WriteString("<div>\n")
 
 	// Title
 	sb.WriteString(fmt.Sprintf("<h1>%s</h1>\n", html.EscapeString(page.Config.Title)))
@@ -109,7 +109,7 @@ func buildTemplate(page *Page) string {
 	sb.WriteString(page.HTML)
 	sb.WriteString("\n")
 
-	sb.WriteString("</article>\n")
+	sb.WriteString("</div>\n")
 	sb.WriteString("{{ end }}\n")
 
 	return sb.String()
