@@ -2,7 +2,7 @@
 <div>
     <nav>
         <ul>
-            <li><a href="/mirrors" class="secondary">&larr; {{ .Locale.T "error.back_to_mirrors" }}</a></li>
+            <li><a href="{{ .BackURL }}" class="secondary">&larr; {{ .BackTitle | .Locale.T }}</a></li>
         </ul>
     </nav>
     <hgroup>

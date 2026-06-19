@@ -147,10 +147,8 @@ type Metadata struct {
 	// "Arch Linux"
 	Desc string `json:"desc"`
 	// "/archlinux"
-	URL string `json:"url"`
-	// "/help/archlinux"
-	HelpURL string `json:"help_url"`
-	Type    Type   `json:"type"`
+	URL  string `json:"url"`
+	Type Type   `json:"type"`
 }
 
 type Sync struct {

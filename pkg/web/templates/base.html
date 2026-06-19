@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark">
-    <title>{{ (site).Name }}</title>
+    <title>{{ .Title | .Locale.T }}</title>
     <link rel="stylesheet" href="/static/css/pico.min.fbc9a63f.css">
     <style>
         #mirror-table {
@@ -109,11 +109,19 @@
             line-height: 1.25;
             margin-bottom: 24px;
         }
+
+        .help-grid {
+            grid-template-columns: 1fr 4fr;
+        }
+
     </style>
+    {{ if .PageType.IsHelp }}
+    <script src="/static/scripts/mustache.min.js"></script>
+    <script src="/static/scripts/mirrorz-help.js"></script>
+    {{ end }}
 </head>
 
 <body>
-
     <header class="container">
         <nav>
             <ul>

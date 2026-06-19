@@ -103,9 +103,8 @@ func BenchmarkManager_All_WithBaseMirrors(b *testing.B) {
 				baseMirrors[m.Name] = Mirror{
 					Name: m.Name,
 					Metadata: &Metadata{
-						Desc:    m.Name + " description",
-						URL:     "https://" + m.Name + ".org",
-						HelpURL: "/help/" + m.Name,
+						Desc: m.Name + " description",
+						URL:  "https://" + m.Name + ".org",
 					},
 				}
 			}

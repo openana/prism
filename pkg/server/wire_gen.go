@@ -74,7 +74,13 @@ func InitializeServer(cfg *config.Config) (*Server, func(), error) {
 		return nil, nil, err
 	}
 	webServerConfig := ProvideWebServerConfig(cfg)
-	server := web.NewServer(webServerConfig, manager, cachedProvider, trieResolver, logger)
+	server, err := web.NewServer(webServerConfig, manager, cachedProvider, trieResolver, logger)
+	if err != nil {
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
 	routerRouter := router.NewRouter(routerConfig, logger, accessLogger, trieResolver, manager, cachedProvider, server)
 	serverServer := NewServer(serverConfig, routerRouter, logger)
 	return serverServer, func() {

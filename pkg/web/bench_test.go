@@ -70,8 +70,9 @@ type mockServerConfig struct {
 	isoInfo []ISOInfo
 }
 
-func (m *mockServerConfig) Site() Site         { return m.site }
-func (m *mockServerConfig) ISOInfo() []ISOInfo { return m.isoInfo }
+func (m *mockServerConfig) Site() Site                      { return m.site }
+func (m *mockServerConfig) ISOInfo() []ISOInfo              { return m.isoInfo }
+func (m *mockServerConfig) HelpMirrors() []HelpMirrorConfig { return nil }
 
 // ---------------------------------------------------------------------------
 // test data helpers
@@ -93,10 +94,9 @@ func makeMirrors(n int) []mirrors.Mirror {
 		ms[i] = mirrors.Mirror{
 			Name: name,
 			Metadata: &mirrors.Metadata{
-				Desc:    name + " mirror",
-				URL:     "/" + name,
-				HelpURL: "/help/" + name,
-				Type:    mirrors.Type(i%3 + 1), // cycle through Rsync(1), Git(2), Proxy(3)
+				Desc: name + " mirror",
+				URL:  "/" + name,
+				Type: mirrors.Type(i%3 + 1), // cycle through Rsync(1), Git(2), Proxy(3)
 			},
 			Sync: &mirrors.Sync{
 				Upstream:     "rsync://upstream.example.com/" + name,
@@ -196,7 +196,7 @@ func makeISOInfo() []ISOInfo {
 // benchmark server helper
 // ---------------------------------------------------------------------------
 
-func newBenchServer(mirrors []mirrors.Mirror, entries []index.Entry) *Server {
+func newBenchServer(mirrors []mirrors.Mirror, entries []index.Entry) (s *Server) {
 	cfg := &mockServerConfig{
 		site:    makeSite(),
 		isoInfo: makeISOInfo(),
@@ -223,7 +223,8 @@ func newBenchServer(mirrors []mirrors.Mirror, entries []index.Entry) *Server {
 		},
 	}
 
-	return NewServer(cfg, getter, provider, resolver, zerolog.Nop())
+	s, _ = NewServer(cfg, getter, provider, resolver, zerolog.Nop())
+	return
 }
 
 // renderResponse forces the stream-writer body to be written, then discards it.
@@ -341,7 +342,7 @@ func BenchmarkHandleNotFound(b *testing.B) {
 
 	for range b.N {
 		ctx := &fasthttp.RequestCtx{}
-		srv.HandleNotFound(ctx)
+		srv.handleNotFound(ctx, "", "")
 		renderResponse(ctx)
 	}
 }

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/openana/prism/pkg/mirrors"
-	"github.com/openana/prism/pkg/web/i18n"
 	"github.com/valyala/fasthttp"
 )
 
@@ -19,13 +18,16 @@ type Mirror struct {
 	LastUpdate string
 }
 
-func FormatMirrors(src *mirrors.Mirror) Mirror {
+func (s *Server) FormatMirrors(src *mirrors.Mirror) Mirror {
 	tgt := Mirror{
 		Name: src.Name,
 	}
 
 	if src.Metadata != nil {
-		tgt.Help = src.Metadata.HelpURL
+		h, ok := s.help.m[src.Name]
+		if ok {
+			tgt.Help = h.URL
+		}
 		tgt.Type = src.Metadata.Type.String()
 		tgt.Desc = src.Metadata.Desc
 
@@ -45,8 +47,8 @@ func FormatMirrors(src *mirrors.Mirror) Mirror {
 	return tgt
 }
 
-type MirrorPage struct {
-	Locale  *i18n.Locale
+type MirrorPageData struct {
+	PageBase
 	Mirrors []Mirror
 }
 
@@ -58,12 +60,19 @@ func (s *Server) HandleMirrors(ctx *fasthttp.RequestCtx) {
 
 	var mirrors []Mirror
 	for m := range it {
-		mirrors = append(mirrors, FormatMirrors(&m))
+		mirrors = append(mirrors, s.FormatMirrors(&m))
 	}
 
 	ctx.SetContentType("text/html; charset=utf-8")
 	ctx.SetBodyStreamWriter(func(w *bufio.Writer) {
-		if err := s.pages.mirrors.ExecuteTemplate(w, "base", MirrorPage{Locale: s.resolveLocale(ctx), Mirrors: mirrors}); err != nil {
+		if err := s.pages.mirrors.ExecuteTemplate(w, "base", MirrorPageData{
+			PageBase: PageBase{
+				Title:    "mirrors.title",
+				Locale:   s.resolveLocale(ctx),
+				PageType: PageTypeMirrors,
+			},
+			Mirrors: mirrors,
+		}); err != nil {
 			s.deps.logger.Error().Err(err).Msg("failed to render template")
 		}
 		w.Flush()

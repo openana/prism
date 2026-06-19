@@ -22,8 +22,6 @@ type Config struct {
 
 	StaticMirrors []StaticMirror `yaml:"static_mirrors"`
 
-	Misc Misc `yaml:"misc"`
-
 	Site Site `yaml:"site"`
 
 	ISOInfo []ISOInfo `yaml:"iso_info"`
@@ -96,10 +94,6 @@ type MirrorHelp struct {
 	// off, auto, manual
 	Mode string `yaml:"mode"`
 	URL  string `yaml:"url"`
-}
-
-type Misc struct {
-	HelpURLPrefix string `yaml:"help_url_prefix"`
 }
 
 type StaticMirror struct {

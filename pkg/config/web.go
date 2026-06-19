@@ -1,10 +1,13 @@
 package config
 
-import "github.com/openana/prism/pkg/web"
+import (
+	"github.com/openana/prism/pkg/web"
+)
 
 type WebServer struct {
-	site    web.Site
-	isoInfo []web.ISOInfo
+	site        web.Site
+	isoInfo     []web.ISOInfo
+	helpMirrors []web.HelpMirrorConfig
 }
 
 func (cfg *WebServer) Site() web.Site {
@@ -13,6 +16,10 @@ func (cfg *WebServer) Site() web.Site {
 
 func (cfg *WebServer) ISOInfo() []web.ISOInfo {
 	return cfg.isoInfo
+}
+
+func (cfg *WebServer) HelpMirrors() []web.HelpMirrorConfig {
+	return cfg.helpMirrors
 }
 
 func (cfg *Config) ToWebServer() *WebServer {
@@ -45,8 +52,49 @@ func (cfg *Config) ToWebServer() *WebServer {
 		}
 	}
 
+	// Collect mirror helps
+	seen := make(map[string]struct{})
+	var helpMirrors []web.HelpMirrorConfig
+	for _, host := range cfg.Hosts {
+		for _, m := range host.Mirrors {
+			if m.Help.Mode == "" {
+				m.Help.Mode = "auto"
+			}
+			if m.Help.Mode == "auto" || m.Help.Mode == "manual" {
+				if _, ok := seen[m.Name]; ok {
+					continue
+				}
+				seen[m.Name] = struct{}{}
+				helpMirrors = append(helpMirrors, web.HelpMirrorConfig{
+					Name:      m.Name,
+					Mode:      m.Help.Mode,
+					URLPrefix: m.URLPrefix,
+					HelpURL:   m.Help.URL,
+				})
+			}
+		}
+	}
+	for _, m := range cfg.StaticMirrors {
+		if m.Help.Mode == "" {
+			m.Help.Mode = "auto"
+		}
+		if m.Help.Mode == "auto" || m.Help.Mode == "manual" {
+			if _, ok := seen[m.Name]; ok {
+				continue
+			}
+			seen[m.Name] = struct{}{}
+			helpMirrors = append(helpMirrors, web.HelpMirrorConfig{
+				Name:      m.Name,
+				Mode:      m.Help.Mode,
+				URLPrefix: m.URLPrefix,
+				HelpURL:   m.Help.URL,
+			})
+		}
+	}
+
 	return &WebServer{
-		site:    site,
-		isoInfo: isoInfo,
+		site:        site,
+		isoInfo:     isoInfo,
+		helpMirrors: helpMirrors,
 	}
 }

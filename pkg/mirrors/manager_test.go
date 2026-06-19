@@ -230,9 +230,8 @@ func TestManager_All_InjectsBaseMirrorMetadata(t *testing.T) {
 		"alpine": {
 			Name: "alpine",
 			Metadata: &Metadata{
-				Desc:    "Alpine Linux",
-				URL:     "https://alpinelinux.org",
-				HelpURL: "https://help.example.com/alpine",
+				Desc: "Alpine Linux",
+				URL:  "https://alpinelinux.org",
 			},
 		},
 	}
@@ -539,10 +538,9 @@ func TestManager_Mirrorz_ReturnsMirrorzWithSync(t *testing.T) {
 					Size:         4 * 1024 * 1024 * 1024 * 1024,
 				},
 				Metadata: &Metadata{
-					Desc:    "Alpine Linux",
-					URL:     "/alpine",
-					HelpURL: "/help/alpine",
-					Type:    Rsync,
+					Desc: "Alpine Linux",
+					URL:  "/alpine",
+					Type: Rsync,
 				},
 			},
 		},

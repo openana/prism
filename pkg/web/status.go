@@ -7,7 +7,6 @@ import (
 
 	"github.com/docker/go-units"
 	"github.com/openana/prism/pkg/mirrors"
-	"github.com/openana/prism/pkg/web/i18n"
 	"github.com/valyala/fasthttp"
 )
 
@@ -51,8 +50,8 @@ func FormatStatus(src *mirrors.Mirror) (Status, bool) {
 	return tgt, true
 }
 
-type StatusPage struct {
-	Locale  *i18n.Locale
+type StatusPageData struct {
+	PageBase
 	Mirrors []Status
 }
 
@@ -86,7 +85,14 @@ func (s *Server) HandleStatus(ctx *fasthttp.RequestCtx) {
 
 	ctx.SetContentType("text/html; charset=utf-8")
 	ctx.SetBodyStreamWriter(func(w *bufio.Writer) {
-		if err := s.pages.status.ExecuteTemplate(w, "base", StatusPage{Locale: s.resolveLocale(ctx), Mirrors: mirrors}); err != nil {
+		if err := s.pages.status.ExecuteTemplate(w, "base", StatusPageData{
+			PageBase: PageBase{
+				Locale:   s.resolveLocale(ctx),
+				PageType: PageTypeStatus,
+				Title:    "status.title",
+			},
+			Mirrors: mirrors,
+		}); err != nil {
 			s.deps.logger.Error().Err(err).Msg("failed to render template")
 		}
 		w.Flush()

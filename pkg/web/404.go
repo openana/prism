@@ -3,21 +3,28 @@ package web
 import (
 	"bufio"
 
-	"github.com/openana/prism/pkg/web/i18n"
 	"github.com/valyala/fasthttp"
 )
 
-// NotFoundPage is the data passed to the 404 template.
-type NotFoundPage struct {
-	Locale *i18n.Locale
+// NotFoundPageData is the data passed to the 404 template.
+type NotFoundPageData struct {
+	PageBase
+	BackURL   string
+	BackTitle string
 }
 
-func (s *Server) HandleNotFound(ctx *fasthttp.RequestCtx) {
+func (s *Server) handleNotFound(ctx *fasthttp.RequestCtx, backURL string, backTitle string) {
 	ctx.SetContentType("text/html; charset=utf-8")
 	ctx.SetStatusCode(fasthttp.StatusNotFound)
 	ctx.SetBodyStreamWriter(func(w *bufio.Writer) {
-		if err := s.pages.notFound.ExecuteTemplate(w, "base", NotFoundPage{
-			Locale: s.resolveLocale(ctx),
+		if err := s.pages.notFound.ExecuteTemplate(w, "base", NotFoundPageData{
+			PageBase: PageBase{
+				Title:    "error.title",
+				Locale:   s.resolveLocale(ctx),
+				PageType: PageNotFound,
+			},
+			BackURL:   backURL,
+			BackTitle: backTitle,
 		}); err != nil {
 			s.deps.logger.Error().Err(err).Msg("failed to render 404 template")
 		}

@@ -14,8 +14,10 @@ LDFLAGS := -s -w \
 	-X '$(MODULE)/pkg/meta.Platform=$(GOOS)/$(GOARCH)' \
 	-X '$(MODULE)/pkg/meta.GoVersion=$(GOVER)'
 
-.PHONY: build test bench clean update-cname
-.DEFAULT_GOAL := build
+.PHONY: build test bench clean update-cname gen-helpz wire
+.DEFAULT_GOAL := all
+
+all: clean gen-helpz build
 
 build:
 	go build -ldflags "$(LDFLAGS)" -o $(BINARY) ./cmd/prism/
@@ -31,3 +33,10 @@ clean:
 
 update-cname:
 	python3 pkg/mirrors/cname/convert.py
+
+gen-helpz:
+	go run pkg/web/helpz/*.go -src zdoc/global -out pkg/web/templates/help && \
+	go run pkg/web/helpz/*.go -src zdoc/local -out pkg/web/templates/help
+
+wire:
+	go generate ./pkg/server

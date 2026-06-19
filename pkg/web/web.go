@@ -1,13 +1,19 @@
 package web
 
 import (
+	"cmp"
 	"embed"
+	"fmt"
 	"html/template"
 	"io/fs"
+	"net/url"
+	"slices"
+	"strings"
 
 	"github.com/openana/prism/pkg/index"
 	"github.com/openana/prism/pkg/meta"
 	"github.com/openana/prism/pkg/mirrors"
+	"github.com/openana/prism/pkg/mirrors/cname"
 	purl "github.com/openana/prism/pkg/url"
 	"github.com/openana/prism/pkg/web/i18n"
 	"github.com/rs/zerolog"
@@ -16,8 +22,13 @@ import (
 
 //go:embed templates/* static/*
 var embeddedFS embed.FS
+
+//go:embed templates/help/*
+var helpEmbeddedFS embed.FS
+
 var templateFS fs.FS
 var staticFS fs.FS
+var helpFS fs.FS
 
 func init() {
 	var err error
@@ -29,6 +40,33 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	helpFS, err = fs.Sub(helpEmbeddedFS, "templates/help")
+	if err != nil {
+		panic(err)
+	}
+}
+
+// PageType identifies the kind of page being rendered, enabling type-specific
+// behavior in shared templates (scripts, styles, menus, etc.).
+type PageType uint8
+
+const (
+	PageTypeDefault PageType = iota
+	PageTypeMirrors
+	PageTypeStatus
+	PageTypeDownloads
+	PageTypeBrowse
+	PageTypeHelp
+	PageNotFound
+)
+
+func (t PageType) IsHelp() bool { return t == PageTypeHelp }
+
+// PageBase holds fields common to all page data types passed to base.html.
+type PageBase struct {
+	Title    string
+	Locale   *i18n.Locale
+	PageType PageType
 }
 
 type Handler interface {
@@ -38,7 +76,7 @@ type Handler interface {
 	HandleStatus(ctx *fasthttp.RequestCtx)
 	HandleStatic(ctx *fasthttp.RequestCtx)
 	HandleBrowse(ctx *fasthttp.RequestCtx)
-	HandleNotFound(ctx *fasthttp.RequestCtx)
+	HandleHelp(ctx *fasthttp.RequestCtx)
 }
 
 type Site struct {
@@ -65,9 +103,18 @@ type ISOInfo struct {
 	URLs     []ISODownload
 }
 
+// HelpMirrorConfig describes a mirror that has a help page (auto or manual).
+type HelpMirrorConfig struct {
+	Name      string
+	Mode      string
+	URLPrefix string
+	HelpURL   string
+}
+
 type ServerConfig interface {
 	Site() Site
 	ISOInfo() []ISOInfo
+	HelpMirrors() []HelpMirrorConfig
 }
 
 type Server struct {
@@ -92,10 +139,16 @@ type Server struct {
 		downloadsDetail *template.Template
 		browse          *template.Template
 		notFound        *template.Template
+		help            map[string]*HelpPage // cname -> help page
+	}
+
+	help struct {
+		sorted []HelpLink
+		m      map[string]HelpLink // name -> HelpLink
 	}
 }
 
-func NewServer(cfg ServerConfig, mirrorGetter mirrors.Getter, indexProvider index.Provider, pathResolver purl.Resolver, logger zerolog.Logger) *Server {
+func NewServer(cfg ServerConfig, mirrorGetter mirrors.Getter, indexProvider index.Provider, pathResolver purl.Resolver, logger zerolog.Logger) (*Server, error) {
 	s := &Server{}
 
 	s.cfg.site = cfg.Site()
@@ -136,7 +189,92 @@ func NewServer(cfg ServerConfig, mirrorGetter mirrors.Getter, indexProvider inde
 	s.pages.browse = parsePage("browse.html")
 	s.pages.notFound = parsePage("404.html")
 
-	return s
+	// Parse help templates for mirrors with auto help mode.
+	siteURL := cfg.Site().URL
+	helpMirrors := cfg.HelpMirrors()
+	s.pages.help = make(map[string]*HelpPage, len(helpMirrors))
+
+	// Helper to parse a help page:
+	parseHelpPage := func(helpFile string) *template.Template {
+		tpl := template.New(helpFile).Funcs(funcMap)
+		template.Must(tpl.ParseFS(templateFS, "base.html", "help_layout.html"))
+		template.Must(tpl.ParseFS(helpFS, helpFile))
+		return tpl
+	}
+
+	helps := make(map[string]HelpLink)
+
+	entries, err := fs.ReadDir(helpFS, ".")
+	if err != nil {
+		return nil, fmt.Errorf("web.NewServer: failed to read templates: %w", err)
+	}
+
+	for _, hm := range helpMirrors {
+		if hm.Mode == "auto" {
+			cnameStr := cname.Cname(hm.Name)
+
+			endpoint, err := url.JoinPath(siteURL, strings.TrimSuffix(hm.URLPrefix, "/"))
+			if err != nil {
+				return nil, fmt.Errorf("web.NewServer: failed to join endpoint: %w", err)
+			}
+
+			page := &HelpPage{
+				ByLocale: make(map[string]*template.Template),
+				Endpoint: endpoint,
+			}
+
+			for _, e := range entries {
+				if e.IsDir() {
+					continue
+				}
+				name := e.Name()
+				prefix := cnameStr + "."
+				if strings.HasPrefix(name, prefix) && strings.HasSuffix(name, ".html") {
+					seenEn := false // Make sure en is the fallback if exists.
+					// Extract lang: "alpine.zh.html" -> "zh"
+					lang := strings.TrimSuffix(strings.TrimPrefix(name, prefix), ".html")
+					tpl := parseHelpPage(name)
+					page.ByLocale[lang] = tpl
+					if !seenEn {
+						page.Fallback = tpl
+					}
+					if lang == "en" {
+						seenEn = true
+					}
+				}
+			}
+
+			if page.Fallback != nil {
+				s.pages.help[cnameStr] = page
+				helps[hm.Name] = HelpLink{
+					Cname: cnameStr,
+					URL:   "/help/" + cnameStr,
+				}
+			} else {
+				s.deps.logger.Warn().Str("mirror", hm.Name).Str("cname", cnameStr).Msg("no built-in help for mirror")
+			}
+
+		} else if hm.Mode == "manual" {
+			helps[hm.Name] = HelpLink{
+				Cname: cname.Cname(hm.Name),
+				URL:   hm.HelpURL,
+			}
+		}
+	}
+
+	sorted := make([]HelpLink, 0, len(helps))
+	for _, h := range helps {
+		sorted = append(sorted, h)
+	}
+
+	slices.SortFunc(sorted, func(a, b HelpLink) int {
+		return cmp.Compare(a.Cname, b.Cname)
+	})
+
+	s.help.m = helps
+	s.help.sorted = sorted
+
+	return s, nil
 }
 
 func (s *Server) resolveLocale(ctx *fasthttp.RequestCtx) *i18n.Locale {

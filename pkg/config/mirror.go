@@ -92,25 +92,12 @@ func (cfg *Config) ToMirrorManager() (*MirrorManager, error) {
 	baseMirrors := make(map[string]mirrors.Mirror)
 	for _, host := range cfg.Hosts {
 		for _, m := range host.Mirrors {
-			// Help URL
-			helpURL := ""
-			switch m.Help.Mode {
-			case "off":
-			case "auto":
-				helpURL = cfg.Misc.HelpURLPrefix + m.Name
-			case "manual":
-				helpURL = m.Help.URL
-			default:
-				return nil, fmt.Errorf("unknown hosts[%q].mirrors[%q].help.mode: %q", host.Name, m.Name, m.Help.Mode)
-			}
-
 			baseMirrors[m.Name] = mirrors.Mirror{
 				Name: m.Name,
 				Metadata: &mirrors.Metadata{
-					Desc:    m.Desc,
-					URL:     m.URLPrefix,
-					HelpURL: helpURL,
-					Type:    mirrors.TypeFromString(m.Type),
+					Desc: m.Desc,
+					URL:  m.URLPrefix,
+					Type: mirrors.TypeFromString(m.Type),
 				},
 			}
 		}
@@ -118,25 +105,12 @@ func (cfg *Config) ToMirrorManager() (*MirrorManager, error) {
 
 	// Static mirrors have higher precedence
 	for _, m := range cfg.StaticMirrors {
-		// Help URL
-		helpURL := ""
-		switch m.Help.Mode {
-		case "off":
-		case "auto":
-			helpURL = cfg.Misc.HelpURLPrefix + m.Name
-		case "manual":
-			helpURL = m.Help.URL
-		default:
-			return nil, fmt.Errorf("unknown static_mirrors[%q].help.mode: %q", m.Name, m.Help.Mode)
-		}
-
 		baseMirrors[m.Name] = mirrors.Mirror{
 			Name: m.Name,
 			Metadata: &mirrors.Metadata{
-				Desc:    m.Desc,
-				URL:     m.URLPrefix,
-				HelpURL: helpURL,
-				Type:    mirrors.TypeFromString(m.Type),
+				Desc: m.Desc,
+				URL:  m.URLPrefix,
+				Type: mirrors.TypeFromString(m.Type),
 			},
 		}
 	}

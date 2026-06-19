@@ -67,6 +67,7 @@ func NewRouter(cfg RouterConfig, logger zerolog.Logger, accessLogger log.AccessL
 	r.GET("/browse", rt.deps.webHandler.HandleBrowse)
 	r.GET("/downloads", rt.deps.webHandler.HandleDownloads)
 	r.GET("/downloads/{distro}", rt.deps.webHandler.HandleDownloadsDetail)
+	r.GET("/help/{cname}", rt.deps.webHandler.HandleHelp)
 
 	// API routes
 	r.GET("/api/ping", rt.handlePing)

@@ -10,8 +10,10 @@ require (
 	github.com/goccy/go-yaml v1.19.2
 	github.com/google/wire v0.7.0
 	github.com/rs/zerolog v1.35.1
+	github.com/spf13/cobra v1.10.2
 	github.com/valyala/bytebufferpool v1.0.0
 	github.com/valyala/fasthttp v1.71.0
+	github.com/yuin/goldmark v1.8.2
 	golang.org/x/sync v0.21.0
 )
 
@@ -29,7 +31,6 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/savsgio/gotils v0.0.0-20240704082632-aef3928b8a38 // indirect
-	github.com/spf13/cobra v1.10.2 // indirect
 	github.com/spf13/pflag v1.0.9 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	golang.org/x/arch v0.0.0-20210923205945-b76863e36670 // indirect

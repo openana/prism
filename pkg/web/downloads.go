@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"net/url"
 
-	"github.com/openana/prism/pkg/web/i18n"
 	"github.com/valyala/fasthttp"
 )
 
@@ -13,14 +12,14 @@ type CategoryGroup struct {
 	Distros  []string
 }
 
-type DownloadsIndexPage struct {
-	Locale     *i18n.Locale
+type DownloadsIndexPageData struct {
+	PageBase
 	Categories []CategoryGroup
 }
 
-type DownloadsDetailPage struct {
-	Locale *i18n.Locale
-	Info   ISOInfo
+type DownloadsDetailPageData struct {
+	PageBase
+	Info ISOInfo
 }
 
 func GroupByCategory(infos []ISOInfo) []CategoryGroup {
@@ -50,8 +49,12 @@ func (s *Server) HandleDownloads(ctx *fasthttp.RequestCtx) {
 
 	ctx.SetContentType("text/html; charset=utf-8")
 	ctx.SetBodyStreamWriter(func(w *bufio.Writer) {
-		page := DownloadsIndexPage{
-			Locale:     s.resolveLocale(ctx),
+		page := DownloadsIndexPageData{
+			PageBase: PageBase{
+				Locale:   s.resolveLocale(ctx),
+				PageType: PageTypeDownloads,
+				Title:    "downloads.title",
+			},
 			Categories: s.cfg.categories,
 		}
 		if err := s.pages.downloads.ExecuteTemplate(w, "base", page); err != nil {
@@ -66,26 +69,30 @@ func (s *Server) HandleDownloadsDetail(ctx *fasthttp.RequestCtx) {
 
 	distro, ok := ctx.UserValue("distro").(string)
 	if !ok || distro == "" {
-		s.HandleNotFound(ctx)
+		s.handleNotFound(ctx, "/downloads", "nav.downloads")
 		return
 	}
 
 	var err error
 	distro, err = url.PathUnescape(distro)
 	if err != nil {
-		s.HandleNotFound(ctx)
+		s.handleNotFound(ctx, "/downloads", "nav.downloads")
 		return
 	}
 
 	idx, ok := s.cfg.isoInfoIdx[distro]
 	if !ok {
-		s.HandleNotFound(ctx)
+		s.handleNotFound(ctx, "/downloads", "nav.downloads")
 		return
 	}
 
 	ctx.SetContentType("text/html; charset=utf-8")
 	ctx.SetBodyStreamWriter(func(w *bufio.Writer) {
-		if err := s.pages.downloadsDetail.ExecuteTemplate(w, "base", DownloadsDetailPage{Locale: s.resolveLocale(ctx), Info: s.cfg.isoInfo[idx]}); err != nil {
+		if err := s.pages.downloadsDetail.ExecuteTemplate(w, "base", DownloadsDetailPageData{PageBase: PageBase{
+			Locale:   s.resolveLocale(ctx),
+			PageType: PageTypeDownloads,
+			Title:    "downloads.title",
+		}, Info: s.cfg.isoInfo[idx]}); err != nil {
 			s.deps.logger.Error().Err(err).Msg("failed to render template")
 		}
 		w.Flush()

@@ -1,0 +1,20 @@
+{{ define "content" }}
+<nav>
+    <ul>
+        <li><a href="/mirrors" class="secondary">&larr; {{ .Locale.T "nav.mirrors" }}</a></li>
+    </ul>
+</nav>
+<div class="grid help-grid">
+    <aside>
+        <nav>
+            <h3>{{ .Locale.T "help.sidebar_title" }}</h3>
+            <ul>
+                {{ range .HelpLinks }}
+                <li><a href="{{ .URL }}">{{ .Cname }}</a></li>
+                {{ end }}
+            </ul>
+        </nav>
+    </aside>
+    {{ template "help_body" . }}
+</div>
+{{ end }}

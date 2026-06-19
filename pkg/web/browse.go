@@ -10,7 +10,6 @@ import (
 
 	"github.com/docker/go-units"
 	"github.com/openana/prism/pkg/index"
-	"github.com/openana/prism/pkg/web/i18n"
 	"github.com/valyala/bytebufferpool"
 	"github.com/valyala/fasthttp"
 )
@@ -30,8 +29,8 @@ type Breadcrumb struct {
 	URL   string
 }
 
-type BrowsePage struct {
-	Locale      *i18n.Locale
+type BrowsePageData struct {
+	PageBase
 	Path        string
 	Breadcrumbs []Breadcrumb
 	Entries     []BrowseEntry
@@ -59,7 +58,7 @@ func (s *Server) HandleBrowse(ctx *fasthttp.RequestCtx) {
 
 	resolvedPath, record, ok := s.deps.pathResolver.Append(rawPath, pathBuf.B)
 	if !ok {
-		s.HandleNotFound(ctx)
+		s.handleNotFound(ctx, "/mirrors", "nav.mirrors")
 		return
 	}
 
@@ -67,7 +66,7 @@ func (s *Server) HandleBrowse(ctx *fasthttp.RequestCtx) {
 	it, age, err := s.deps.indexProvider.AllOrErr(ctx, record.Host, resolvedPath)
 	if err != nil {
 		s.deps.logger.Warn().Err(err).Bytes("path", resolvedPath).Msg("index provider error")
-		s.HandleNotFound(ctx)
+		s.handleNotFound(ctx, "/mirrors", "nav.mirrors")
 		return
 	}
 
@@ -105,8 +104,8 @@ func (s *Server) HandleBrowse(ctx *fasthttp.RequestCtx) {
 
 	breadcrumbs := buildBreadcrumbs(string(rawPath))
 
-	page := BrowsePage{
-		Locale:      locale,
+	page := BrowsePageData{
+		PageBase:    PageBase{Locale: locale},
 		Path:        string(rawPath),
 		Breadcrumbs: breadcrumbs,
 		Entries:     entries,
