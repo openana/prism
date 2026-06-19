@@ -17,7 +17,7 @@ LDFLAGS := -s -w \
 .PHONY: build test bench clean update-cname gen-helpz wire
 .DEFAULT_GOAL := all
 
-all: clean gen-helpz build
+all: clean gen-helpz test-helpz build
 
 build:
 	go build -ldflags "$(LDFLAGS)" -o $(BINARY) ./cmd/prism/
@@ -40,3 +40,6 @@ gen-helpz:
 
 wire:
 	go generate ./pkg/server
+
+test-helpz:
+	go test -run TestHelpTemplatesParseAndRender ./pkg/web

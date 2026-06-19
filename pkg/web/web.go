@@ -191,15 +191,7 @@ func NewServer(cfg ServerConfig, mirrorGetter mirrors.Getter, indexProvider inde
 	s.deps.pathResolver = pathResolver
 	s.deps.logger = logger.With().Str("module", "web.Server").Logger()
 
-	funcMap := template.FuncMap{
-		"site": func() *Site {
-			return &s.cfg.site
-		},
-		"version": func() string {
-			return meta.VersionString
-		},
-		"catAlias": categoryAlias,
-	}
+	funcMap := newTemplateFuncMap(func() *Site { return &s.cfg.site })
 
 	parsePage := func(pageFile string) *template.Template {
 		return template.Must(template.New(pageFile).Funcs(funcMap).ParseFS(
@@ -329,4 +321,12 @@ func ParseNewsTemplate(funcMap template.FuncMap) (*template.Template, error) {
 		return nil, fmt.Errorf("ParseNewsTemplate: %w", err)
 	}
 	return tpl, nil
+}
+
+func newTemplateFuncMap(siteFn func() *Site) template.FuncMap {
+	return template.FuncMap{
+		"site":     siteFn,
+		"version":  func() string { return meta.VersionString },
+		"catAlias": categoryAlias,
+	}
 }
