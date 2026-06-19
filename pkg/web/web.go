@@ -176,7 +176,7 @@ func NewServer(cfg ServerConfig, mirrorGetter mirrors.Getter, indexProvider inde
 			return &s.cfg.site
 		},
 		"version": func() string {
-			return meta.ServerName
+			return meta.VersionString
 		},
 		"catAlias": categoryAlias,
 	}
