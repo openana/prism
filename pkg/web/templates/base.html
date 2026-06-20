@@ -118,12 +118,56 @@
             font-family: monospace;
         }
 
+        .table-title {
+            display: flex;
+            align-items: center;
+        }
+
+        .table-title .search {
+            font-size: .9em;
+            margin-left: auto;
+            margin-bottom: auto;
+            width: 20%;
+            height: 3ch;
+            font-family: monospace;
+        }
+
+        .table-header .sort-button {
+            font-size: .9em;
+            border: transparent;
+            padding: 0px;
+            width: 100%;
+            height: 100%;
+            text-align: left;
+        }
+
+        .table-header .sort-button:focus {
+            font-size: .9em;
+            border: transparent;
+            padding: 0px;
+            width: 100%;
+            height: 100%;
+            text-align: left;
+            box-shadow: none;
+            outline: none;
+        }
+
+        .table-header .sort-button.asc::after {
+            content: " ▲";
+        }
+
+        .table-header .sort-button.desc::after {
+            content: " ▼";
+        }
     </style>
-    {{ if .PageType.IsHelp }}
+    {{ if .PageType.IsHelp -}}
     <script src="/static/scripts/mustache.min.d7fd0603.js"></script>
     <script src="/static/scripts/helpz.3136e343.js"></script>
     <script src="/static/scripts/highlight.min.b0be6be0.js"></script>
-    {{ end }}
+    {{- end }}
+    {{ if .PageType.HasTable -}}
+    <script src="/static/scripts/list.min.34456f18.js"></script>
+    {{- end }}
 </head>
 
 <body>
@@ -135,11 +179,16 @@
                 </li>
             </ul>
             <ul>
-                <li><a href="/mirrors" class="contrast">{{ if .PageType.IsMirrors }}<button>{{ .Locale.T "nav.mirrors" }}</button>{{ else }}{{ .Locale.T "nav.mirrors" }}{{ end }}</a></li>
-                <li><a href="/downloads" class="contrast">{{ if .PageType.IsDownloads }}<button>{{ .Locale.T "nav.downloads" }}</button>{{ else }}{{ .Locale.T "nav.downloads" }}{{ end }}</a></li>
-                <li><a href="/status" class="contrast">{{ if .PageType.IsStatus }}<button>{{ .Locale.T "nav.status" }}</button>{{ else }}{{ .Locale.T "nav.status" }}{{ end }}</a></li>
-                <li><a href="/help" class="contrast">{{ if .PageType.IsHelp }}<button>{{ .Locale.T "nav.help" }}</button>{{ else }}{{ .Locale.T "nav.help" }}{{ end }}</a></li>
-                <li><a href="/news/latest" class="contrast">{{ if .PageType.IsNews }}<button>{{ .Locale.T "nav.news" }}</button>{{ else }}{{ .Locale.T "nav.news" }}{{ end }}</a></li>
+                <li><a href="/mirrors" class="contrast">{{ if .PageType.IsMirrors }}<button>{{ .Locale.T "nav.mirrors"
+                            }}</button>{{ else }}{{ .Locale.T "nav.mirrors" }}{{ end }}</a></li>
+                <li><a href="/downloads" class="contrast">{{ if .PageType.IsDownloads }}<button>{{ .Locale.T
+                            "nav.downloads" }}</button>{{ else }}{{ .Locale.T "nav.downloads" }}{{ end }}</a></li>
+                <li><a href="/status" class="contrast">{{ if .PageType.IsStatus }}<button>{{ .Locale.T "nav.status"
+                            }}</button>{{ else }}{{ .Locale.T "nav.status" }}{{ end }}</a></li>
+                <li><a href="/help" class="contrast">{{ if .PageType.IsHelp }}<button>{{ .Locale.T "nav.help"
+                            }}</button>{{ else }}{{ .Locale.T "nav.help" }}{{ end }}</a></li>
+                <li><a href="/news/latest" class="contrast">{{ if .PageType.IsNews }}<button>{{ .Locale.T "nav.news"
+                            }}</button>{{ else }}{{ .Locale.T "nav.news" }}{{ end }}</a></li>
                 <li hidden><a href="/banme" class="contrast">Ban Me</a></li>
             </ul>
         </nav>
@@ -152,7 +201,9 @@
     <footer>
         <div class="container">
             <section id="version">
-                {{ .Locale.T "footer.powered_by" (version) }}
+                <a href="https://github.com/openana/prism" class="secondary">
+                    {{ .Locale.T "footer.powered_by" (version) }}
+                </a>
             </section>
         </div>
     </footer>

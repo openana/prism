@@ -70,6 +70,21 @@ func (t PageType) IsHelp() bool      { return t == PageTypeHelp }
 func (t PageType) IsNews() bool      { return t == PageTypeNews }
 func (t PageType) IsNotFound() bool  { return t == PageNotFound }
 
+func (t PageType) HasTable() bool {
+	switch t {
+	case PageTypeBrowse:
+		fallthrough
+	case PageTypeDownloads:
+		fallthrough
+	case PageTypeMirrors:
+		fallthrough
+	case PageTypeStatus:
+		return true
+	default:
+		return false
+	}
+}
+
 // PageBase holds fields common to all page data types passed to base.html.
 type PageBase struct {
 	Title    string

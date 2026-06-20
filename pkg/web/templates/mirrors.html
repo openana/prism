@@ -1,66 +1,72 @@
 {{ define "content" }}
 <div class="grid mirrors-grid">
+    <div id="mirrors">
     <article>
-        <header>
-            <img class="header-icon" src="/static/img/mirror-16.svg" alt=""><strong>{{ .Locale.T "mirrors.title"
-                }}</strong>
+        <header class="table-title">
+            <img class="header-icon" src="/static/img/mirror-16.svg" alt=""><strong>{{ .Locale.T "mirrors.title" }}</strong>
+            <input class="search" name="search" placeholder="Search" aria-label="Search" />
         </header>
         <div class="overflow-auto">
             <table class="striped" id="mirror-table">
-                <thead>
+                <thead class="table-header">
                     <tr>
-                        <th>{{ .Locale.T "mirrors.th_name" }}</th>
-                        <th>{{ .Locale.T "mirrors.th_description" }}</th>
-                        <th>{{ .Locale.T "mirrors.th_type" }}</th>
-                        <th>{{ .Locale.T "mirrors.th_last_update" }}</th>
-                        <th>{{ .Locale.T "mirrors.th_help" }}</th>
+                        <th><button class="sort sort-button outline contrast" data-sort="name">{{ .Locale.T "mirrors.th_name" }}</button></th>
+                        <th><button class="sort sort-button outline contrast" data-sort="desc">{{ .Locale.T "mirrors.th_description" }}</button></th>
+                        <th><button class="sort sort-button outline contrast" data-sort="type">{{ .Locale.T "mirrors.th_type" }}</button></th>
+                        <th><button class="sort sort-button outline contrast" data-sort="last_update">{{ .Locale.T "mirrors.th_last_update" }}</button></th>
+                        <th><button class="sort sort-button outline contrast" data-sort="help">{{ .Locale.T "mirrors.th_help" }}</button></th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="list">
                     {{ range .Mirrors }}
                     <tr>
-                        <td>{{ if .URL }}<a href="{{ .URL }}">{{ .Name }}</a>{{ else }}{{ .Name }}{{ end }}</td>
-                        <td>{{ if .Desc }}{{ .Desc }}{{ else }}{{ $.Locale.T "mirrors.na" }}{{ end }}</td>
-                        <td>{{ if .Type }}{{ .Type }}{{ else }}{{ $.Locale.T "mirrors.na" }}{{ end }}</td>
-                        <td>{{ if .LastUpdate }}{{ .LastUpdate }}{{ else }}{{ $.Locale.T "mirrors.na" }}{{ end }}</td>
-                        <td>{{ if .Help }}<a href="{{ .Help }}">{{ $.Locale.T "mirrors.help_link" }}</a>{{ else }}{{
-                            $.Locale.T "mirrors.na" }}{{ end }}</td>
+                        <td class="name">{{ if .URL }}<a href="{{ .URL }}">{{ .Name }}</a>{{ else }}{{ .Name }}{{ end }}
+                        </td>
+                        <td class="desc">{{ if .Desc }}{{ .Desc }}{{ else }}{{ $.Locale.T "mirrors.na" }}{{ end }}</td>
+                        <td class="type">{{ if .Type }}{{ .Type }}{{ else }}{{ $.Locale.T "mirrors.na" }}{{ end }}</td>
+                        <td class="last_update">{{ if .LastUpdate }}{{ .LastUpdate }}{{ else }}{{ $.Locale.T "mirrors.na" }}{{ end }}</td>
+                        <td class="help">{{ if .Help }}<a href="{{ .Help }}">{{ $.Locale.T "mirrors.help_link" }}</a>{{ else }}{{ $.Locale.T "mirrors.na" }}{{ end }}</td>
                     </tr>
                     {{ end }}
                 </tbody>
             </table>
         </div>
     </article>
+    </div>
     <aside class="mirrors-aside">
         {{ if .LatestNews }}
         <fieldset>
-            <legend><img class="header-icon" src="/static/img/megaphone-16.svg"><strong>{{ .Locale.T "news.latest_title" }}</strong></legend>
+            <legend><img class="header-icon" src="/static/img/megaphone-16.svg"><strong>{{ .Locale.T "news.latest_title"
+                    }}</strong></legend>
             {{ range .LatestNews }}
             <label>
-                <a href="/news/{{ .Date }}/{{ .Slug }}">{{ .Title }}</a>
+                <a href="/news/{{ .Date }}/{{ .Slug }}">{{ .Title }}</a><br>
+                <small>{{ .Date }}</small>
             </label>
             {{ end }}
         </fieldset>
         {{ end }}
         {{ if .Site }}
         <fieldset>
-            <legend><img class="header-icon" src="/static/img/globe-16.svg"><strong>{{ .Locale.T "mirrors.domain_label" }}</strong></legend>
+            <legend><img class="header-icon" src="/static/img/globe-16.svg"><strong>{{ .Locale.T "mirrors.domain_label"
+                    }}</strong></legend>
             <label>
-                <a href="{{ .Site.URL }}" data-tooltip="{{ .Locale.T "mirrors.domain_auto" }}">{{ .Site.URL }}</a>
+                <a href="{{ .Site.URL }}" data-tooltip="{{ .Locale.T " mirrors.domain_auto" }}">{{ .Site.URL }}</a>
             </label>
             {{ if .Site.URLv4 }}
             <label>
-                <a href="{{ .Site.URLv4 }}" data-tooltip="{{ .Locale.T "mirrors.domain_ipv4" }}">{{ .Site.URLv4 }}</a>
+                <a href="{{ .Site.URLv4 }}" data-tooltip="{{ .Locale.T " mirrors.domain_ipv4" }}">{{ .Site.URLv4 }}</a>
             </label>
             {{ end }}
             {{ if .Site.URLv6 }}
             <label>
-                <a href="{{ .Site.URLv6 }}" data-tooltip="{{ .Locale.T "mirrors.domain_ipv6" }}">{{ .Site.URLv6 }}</a>
+                <a href="{{ .Site.URLv6 }}" data-tooltip="{{ .Locale.T " mirrors.domain_ipv6" }}">{{ .Site.URLv6 }}</a>
             </label>
             {{ end }}
         </fieldset>
         <fieldset>
-            <legend><img class="header-icon" src="/static/img/mail-16.svg"><strong>{{ .Locale.T "mirrors.contact_label" }}</strong></legend>
+            <legend><img class="header-icon" src="/static/img/mail-16.svg"><strong>{{ .Locale.T "mirrors.contact_label"
+                    }}</strong></legend>
             {{ if .Site.Homepage }}
             <label><a href="{{ .Site.Homepage }}">{{ .Locale.T "footer.homepage" }}</a></label>
             {{ end }}
@@ -76,7 +82,8 @@
         </fieldset>
         {{ if .Site.Links }}
         <fieldset>
-            <legend><img class="header-icon" src="/static/img/link-16.svg"><strong>{{ .Locale.T "mirrors.links_label" }}</strong></legend>
+            <legend><img class="header-icon" src="/static/img/link-16.svg"><strong>{{ .Locale.T "mirrors.links_label"
+                    }}</strong></legend>
             {{ range .Site.Links }}
             <label><a href="{{ .URL }}">{{ .Name }}</a></label>
             {{ end }}
@@ -85,4 +92,11 @@
         {{ end }}
     </aside>
 </div>
+<script>
+    var options = {
+        valueNames: ['name', 'desc', 'type', 'last_update', 'help']
+    };
+
+    var mirrorList = new List('mirrors', options);
+</script>
 {{ end }}
