@@ -1,19 +1,21 @@
 {{ define "content" }}
-{{ range .Categories }}
+{{ range $i, $cat := .Categories }}
+<div id="downloads-{{- $i -}}">
 <article>
-    <header><img class="header-icon" src="/static/img/apps-16.svg" alt=""><strong>{{ .Category | catAlias | $.Locale.T }}</strong>
+    <header class="table-title"><img class="header-icon" src="/static/img/apps-16.svg" alt=""><strong>{{ $cat.Category | catAlias | $.Locale.T }}</strong>
+        <input class="search" name="search" placeholder="Search" aria-label="Search" />
     </header>
     <div class="overflow-auto">
         <table class="striped" id="downloads-table">
-            <thead>
+            <thead class="table-header">
                 <tr>
-                    <th>{{ $.Locale.T "downloads.th_distro" }}</th>
+                    <th><button class="sort sort-button outline contrast" data-sort="distro">{{ $.Locale.T "downloads.th_distro" }}</button></th>
                 </tr>
             </thead>
-            <tbody>
-                {{ range .Distros }}
+            <tbody class="list">
+                {{ range $cat.Distros }}
                 <tr>
-                    <td>
+                    <td class="distro">
                         <img class="browser-icon" src="/static/img/tag-16.svg" alt="">
                         <a href="/downloads/{{ . }}">{{ . }}</a>
                     </td>
@@ -23,5 +25,17 @@
         </table>
     </div>
 </article>
+</div>
+<script>
+    window.downloadOptions = window.downloadOptions || {};
+    window.downloadsLists = window.downloadsLists || {};
+
+    // Use the ID as a key
+    window.downloadOptions[{{$i}}] = {
+        valueNames: ['distro']
+    };
+    
+    window.downloadsLists[{{$i}}] = new List('downloads-{{$i}}', window.downloadOptions[{{$i}}]);
+</script>
 {{ end }}
 {{ end }}

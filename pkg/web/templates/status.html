@@ -1,37 +1,38 @@
 {{ define "content" }}
+<div id="status">
 <article>
-    <header>
+    <header class="table-title">
         <img class="header-icon" src="/static/img/graph-bar-horizontal-16.svg" alt=""><strong>{{ .Locale.T "status.title" }}</strong>
+        <input class="search" name="search" placeholder="Search" aria-label="Search" />
     </header>
     <div class="overflow-auto">
         <table class="striped" id="status-table">
-            <thead>
+            <thead class="table-header">
                 <tr>
-                    <th>{{ .Locale.T "status.th_name" }}</th>
-                    <th>{{ .Locale.T "status.th_type" }}</th>
-                    <th>{{ .Locale.T "status.th_last_update" }}</th>
-                    <th>{{ .Locale.T "status.th_last_started" }}</th>
-                    <th>{{ .Locale.T "status.th_last_ended" }}</th>
-                    <th>{{ .Locale.T "status.th_next_schedule" }}</th>
-                    <th>{{ .Locale.T "status.th_upstream" }}</th>
-                    <th>{{ .Locale.T "status.th_status" }}</th>
-                    <th>{{ .Locale.T "status.th_size" }}</th>
+                    <th><button class="sort sort-button outline contrast" data-sort="name">{{ .Locale.T "status.th_name" }}</button></th>
+                    <th><button class="sort sort-button outline contrast" data-sort="type">{{ .Locale.T "status.th_type" }}</button></th>
+                    <th><button class="sort sort-button outline contrast" data-sort="last_update">{{ .Locale.T "status.th_last_update" }}</button></th>
+                    <th><button class="sort sort-button outline contrast" data-sort="last_started">{{ .Locale.T "status.th_last_started" }}</button></th>
+                    <th><button class="sort sort-button outline contrast" data-sort="last_ended">{{ .Locale.T "status.th_last_ended" }}</button></th>
+                    <th><button class="sort sort-button outline contrast" data-sort="next_schedule">{{ .Locale.T "status.th_next_schedule" }}</button></th>
+                    <th><button class="sort sort-button outline contrast" data-sort="upstream">{{ .Locale.T "status.th_upstream" }}</button></th>
+                    <th><button class="sort sort-button outline contrast" data-sort="status">{{ .Locale.T "status.th_status" }}</button></th>
+                    <th><button class="sort sort-button outline contrast" data-sort="size">{{ .Locale.T "status.th_size" }}</button></th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody class="list">
                 {{ range .Mirrors }}
                 {{ if .Name }}
                 <tr class="{{ .StatusClass }}">
-                    <td>{{ .Name }}</td>
-                    <td>{{ if .Type }}{{ .Type }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
-                    <td>{{ if .LastUpdate }}{{ .LastUpdate }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
-                    <td>{{ if .LastStarted }}{{ .LastStarted }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
-                    <td>{{ if .LastEnded }}{{ .LastEnded }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
-                    <td>{{ if .NextSchedule }}{{ .NextSchedule }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}
-                    </td>
-                    <td>{{ if .Upstream }}{{ .Upstream }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
-                    <td>{{ if .Status }}{{ .Status }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
-                    <td>{{ if .Size }}{{ .Size }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
+                    <td class="name">{{ .Name }}</td>
+                    <td class="type">{{ if .Type }}{{ .Type }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
+                    <td class="last_update">{{ if .LastUpdate }}{{ .LastUpdate }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
+                    <td class="last_started">{{ if .LastStarted }}{{ .LastStarted }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
+                    <td class="last_ended">{{ if .LastEnded }}{{ .LastEnded }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
+                    <td class="next_schedule">{{ if .NextSchedule }}{{ .NextSchedule }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
+                    <td class="upstream">{{ if .Upstream }}{{ .Upstream }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
+                    <td class="status">{{ if .Status }}{{ .Status }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
+                    <td class="size">{{ if .Size }}{{ .Size }}{{ else }}{{ $.Locale.T "status.na" }}{{ end }}</td>
                 </tr>
                 {{ end }}
                 {{ end }}
@@ -39,4 +40,11 @@
         </table>
     </div>
 </article>
+</div>
+<script>
+    var options = {
+        valueNames: ['name', 'type', 'last_update', 'last_started', 'last_ended', 'next_schedule', 'upstream', 'status', 'size']
+    };
+    var statusList = new List('status', options);
+</script>
 {{ end }}

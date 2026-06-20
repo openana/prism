@@ -4,29 +4,38 @@
         <li><a href="/downloads" class="secondary">&larr; {{ .Locale.T "nav.downloads" }}</a></li>
     </ul>
 </nav>
+<div id="downloads_detail">
 <article>
-    <header><img class="header-icon" src="/static/img/tag-16.svg" alt=""><strong>{{ .Info.Distro }}</strong>
+    <header class="table-title"><img class="header-icon" src="/static/img/tag-16.svg" alt=""><strong>{{ .Info.Distro }}</strong>
+        <input class="search" name="search" placeholder="Search" aria-label="Search" />
     </header>
     <div class="overflow-auto">
         <table class="striped" id="downloads-table">
-            <thead>
+            <thead class="table-header">
                 <tr>
-                    <th>{{ .Locale.T "downloads_detail.th_name" }}</th>
-                    <th>{{ .Locale.T "downloads_detail.th_url" }}</th>
+                    <th><button class="sort sort-button outline contrast" data-sort="name">{{ .Locale.T "downloads_detail.th_name" }}</button></th>
+                    <th><button class="sort sort-button outline contrast" data-sort="url">{{ .Locale.T "downloads_detail.th_url" }}</button></th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody class="list">
                 {{ range .Info.URLs }}
                 <tr>
-                    <td>
+                    <td class="name">
                         <img class="browser-icon" src="/static/img/package-16.svg" alt="">
                         {{ .Name }}
                     </td>
-                    <td><a href="{{ .URL }}">{{ .URL }}</a></td>
+                    <td class="url"><a href="{{ .URL }}">{{ .URL }}</a></td>
                 </tr>
                 {{ end }}
             </tbody>
         </table>
     </div>
 </article>
+</div>
+<script>
+    var options = {
+        valueNames: ['name', 'url']
+    };
+    var downloadsDetailList = new List('downloads_detail', options);
+</script>
 {{ end }}

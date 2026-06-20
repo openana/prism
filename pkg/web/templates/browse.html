@@ -4,9 +4,11 @@
         <li><a href="/mirrors" class="secondary">&larr; {{ .Locale.T "nav.mirrors" }}</a></li>
     </ul>
 </nav>
+<div id="browse">
 <article>
-    <header>
+    <header class="table-title">
         <img class="header-icon" src="/static/img/file-directory-16.svg" alt=""><strong>{{ .Locale.T "browse.title" }}</strong>
+        <input class="search" name="search" placeholder="Search" aria-label="Search" />
     </header>
     <div class="overflow-auto">
         <fieldset>
@@ -20,17 +22,17 @@
     {{ if .Entries }}
     <div class="overflow-auto">
         <table class="striped" id="browse-table">
-            <thead>
+            <thead class="table-header">
                 <tr>
-                    <th>{{ .Locale.T "browse.th_name" }}</th>
-                    <th>{{ .Locale.T "browse.th_size" }}</th>
-                    <th>{{ .Locale.T "browse.th_modified" }}</th>
+                    <th><button class="sort sort-button outline contrast" data-sort="name">{{ .Locale.T "browse.th_name" }}</button></th>
+                    <th><button class="sort sort-button outline contrast" data-sort="size">{{ .Locale.T "browse.th_size" }}</button></th>
+                    <th><button class="sort sort-button outline contrast" data-sort="mtime">{{ .Locale.T "browse.th_modified" }}</button></th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody class="list">
                 {{ range .Entries }}
                 <tr>
-                    <td>
+                    <td class="name">
                         {{ if eq .Type "file" }}
                         <img class="browser-icon" src="/static/img/file-16.svg" alt="">
                         {{ else if eq .Type "directory" }}
@@ -40,8 +42,8 @@
                         {{ end }}
                         <a href="{{ .URL }}">{{ .Name }}</a>
                     </td>
-                    <td>{{ if .Size }}{{ .Size }}{{ end }}</td>
-                    <td>{{ if .Mtime }}{{ .Mtime }}{{ end }}</td>
+                    <td class="size">{{ if .Size }}{{ .Size }}{{ end }}</td>
+                    <td class="mtime">{{ if .Mtime }}{{ .Mtime }}{{ end }}</td>
                 </tr>
                 {{ end }}
             </tbody>
@@ -51,4 +53,11 @@
     <p><em>{{ .Locale.T "browse.empty" }}</em></p>
     {{ end }}
 </article>
+</div>
+<script>
+    var options = {
+        valueNames: ['name', 'size', 'mtime']
+    };
+    var browseList = new List('browse', options);
+</script>
 {{ end }}
