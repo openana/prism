@@ -114,6 +114,7 @@ var (
 	protoHTTPSBytes = []byte("https")
 
 	cspHeaderTemplate = []byte("default-src 'self'; script-src 'self' 'nonce-")
+	cspStylePart      = []byte("'; style-src 'self' 'nonce-")
 
 	nonceKey              = "nonce"
 	xFrameOptionsValue    = []byte("DENY")
@@ -135,12 +136,15 @@ func (rt *Router) HandleRequest(ctx *fasthttp.RequestCtx) {
 	ctx.Response.Header.SetBytesV("X-Content-Type-Options", xContentTypeOptsValue)
 	ctx.Response.Header.SetBytesV("Referrer-Policy", referrerPolicyValue)
 
-	// Build CSP
-	csp := make([]byte, 0, len(cspHeaderTemplate)+len(nonceHex)+1)
-	csp = append(csp, cspHeaderTemplate...)
-	csp = append(csp, nonceHex...)
-	csp = append(csp, '\'')
-	ctx.Response.Header.SetBytesV("Content-Security-Policy", csp)
+	// Build CSP: "default-src 'self'; script-src 'self' 'nonce-<hex>'; style-src 'self' 'nonce-<hex>'"
+	cspBuf := bytebufferpool.Get()
+	defer bytebufferpool.Put(cspBuf)
+	cspBuf.B = append(cspBuf.B, cspHeaderTemplate...)
+	cspBuf.B = append(cspBuf.B, nonceHex...)
+	cspBuf.B = append(cspBuf.B, cspStylePart...)
+	cspBuf.B = append(cspBuf.B, nonceHex...)
+	cspBuf.B = append(cspBuf.B, '\'')
+	ctx.Response.Header.SetBytesV("Content-Security-Policy", cspBuf.B)
 
 	// Store nonce
 	ctx.SetUserValue(nonceKey, nonceHex)

@@ -11,7 +11,7 @@
     {{ if .PageType.IsHelp }}
     <link rel="stylesheet" href="/static/css/github-dark-dimmed.min.bc1116bf.css">
     {{ end }}
-    <style>
+    <style nonce="{{.Nonce}}">
         #mirror-table {
             font-family: monospace;
             font-size: .9em;

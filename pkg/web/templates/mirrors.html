@@ -51,16 +51,16 @@
             <legend><img class="header-icon" src="/static/img/globe-16.svg"><strong>{{ .Locale.T "mirrors.domain_label"
                     }}</strong></legend>
             <label>
-                <a href="{{ .Site.URL }}" data-tooltip="{{ .Locale.T " mirrors.domain_auto" }}">{{ .Site.URL }}</a>
+                <a href="{{ .Site.URL }}" data-tooltip="{{ .Locale.T "mirrors.domain_auto" }}">{{ .Site.URL }}</a>
             </label>
             {{ if .Site.URLv4 }}
             <label>
-                <a href="{{ .Site.URLv4 }}" data-tooltip="{{ .Locale.T " mirrors.domain_ipv4" }}">{{ .Site.URLv4 }}</a>
+                <a href="{{ .Site.URLv4 }}" data-tooltip="{{ .Locale.T "mirrors.domain_ipv4" }}">{{ .Site.URLv4 }}</a>
             </label>
             {{ end }}
             {{ if .Site.URLv6 }}
             <label>
-                <a href="{{ .Site.URLv6 }}" data-tooltip="{{ .Locale.T " mirrors.domain_ipv6" }}">{{ .Site.URLv6 }}</a>
+                <a href="{{ .Site.URLv6 }}" data-tooltip="{{ .Locale.T "mirrors.domain_ipv6" }}">{{ .Site.URLv6 }}</a>
             </label>
             {{ end }}
         </fieldset>
