@@ -26,6 +26,9 @@ type Handler interface {
 type RouterConfig interface {
 	ProtoHeader() string
 	RemoteIPHeader() string
+	SiteURL() string
+	SiteURLv4() string
+	SiteURLv6() string
 }
 
 // Router is the top level fasthttp handler provider.
@@ -33,6 +36,9 @@ type Router struct {
 	cfg struct {
 		protoHeader    string
 		remoteIPHeader string
+		siteURL        []byte
+		siteURLv4      []byte
+		siteURLv6      []byte
 	}
 
 	deps struct {
@@ -53,6 +59,9 @@ func NewRouter(cfg RouterConfig, logger zerolog.Logger, accessLogger log.AccessL
 
 	rt.cfg.protoHeader = cfg.ProtoHeader()
 	rt.cfg.remoteIPHeader = cfg.RemoteIPHeader()
+	rt.cfg.siteURL = []byte(cfg.SiteURL())
+	rt.cfg.siteURLv4 = []byte(cfg.SiteURLv4())
+	rt.cfg.siteURLv6 = []byte(cfg.SiteURLv6())
 
 	rt.deps.logger = logger.With().Str("module", "router.Router").Logger()
 	rt.deps.accessLogger = zerolog.Logger(accessLogger)
@@ -189,6 +198,25 @@ func (rt *Router) handleRedirect(ctx *fasthttp.RequestCtx) {
 		return
 	}
 
+	// Sniff Host header and select FQDN variant
+	host := ctx.Request.Header.Host()
+	// Strip port (keep IPv6 brackets intact)
+	if n := bytes.LastIndexByte(host, ':'); n != -1 {
+		if bytes.LastIndexByte(host, ']') < n {
+			host = host[:n]
+		}
+	}
+
+	fqdn := record.FQDN // default fallback
+	if len(host) > 0 {
+		switch {
+		case bytes.EqualFold(host, rt.cfg.siteURLv4):
+			fqdn = record.FQDNv4
+		case bytes.EqualFold(host, rt.cfg.siteURLv6):
+			fqdn = record.FQDNv6
+		}
+	}
+
 	uri := ctx.Request.URI()
 
 	// Sniff proto
@@ -198,7 +226,7 @@ func (rt *Router) handleRedirect(ctx *fasthttp.RequestCtx) {
 		uri.SetSchemeBytes(protoHTTPSBytes)
 	}
 
-	uri.SetHost(record.FQDN)
+	uri.SetHost(fqdn)
 
 	ctx.RedirectBytes(uri.FullURI(), fasthttp.StatusMovedPermanently)
 }

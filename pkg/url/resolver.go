@@ -32,6 +32,10 @@ type Record struct {
 	Host string
 	// "mirrors.example.com"
 	FQDN string
+	// "mirrors4.example.com"
+	FQDNv4 string
+	// "mirrors6.example.com"
+	FQDNv6 string
 	// "/mirror/ubuntu/"
 	Prefix string
 }
@@ -105,7 +109,7 @@ func (rt *TrieResolver) Append(path []byte, dst []byte) (result []byte, r Record
 	result = append(dst, r.Prefix...)
 	result = append(result, path[l:]...)
 
-	rt.logger.Debug().Bytes("path", path).Bytes("result", result).Str("host", r.Host).Str("fqdn", r.FQDN).Msg("path resolved")
+	rt.logger.Debug().Bytes("path", path).Bytes("result", result).Str("host", r.Host).Str("fqdn", r.FQDN).Str("fqdn_v4", r.FQDNv4).Str("fqdn_v6", r.FQDNv6).Msg("path resolved")
 
 	return
 }

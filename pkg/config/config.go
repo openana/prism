@@ -69,6 +69,8 @@ type SyncStatus struct {
 type Host struct {
 	Name       string         `yaml:"name"`
 	FQDN       string         `yaml:"fqdn"`
+	FQDNv4     string         `yaml:"fqdn_v4"`
+	FQDNv6     string         `yaml:"fqdn_v6"`
 	Index      HostIndex      `yaml:"index"`
 	SyncStatus HostSyncStatus `yaml:"sync_status"`
 	Mirrors    []Mirror       `yaml:"mirrors"`
@@ -112,6 +114,8 @@ type MirrorHelp struct {
 
 type StaticMirror struct {
 	FQDN          string     `yaml:"fqdn"`
+	FQDNv4        string     `yaml:"fqdn_v4"`
+	FQDNv6        string     `yaml:"fqdn_v6"`
 	Name          string     `yaml:"name"`
 	Desc          string     `yaml:"desc"`
 	Type          string     `yaml:"type"`

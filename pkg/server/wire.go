@@ -51,7 +51,7 @@ func ProvideServerConfig(cfg *config.Config) (ServerConfig, error) {
 }
 
 func ProvideRouterConfig(cfg *config.Config) router.RouterConfig {
-	return cfg.HTTP.ToRouter()
+	return cfg.ToRouter()
 }
 
 func ProvideLoggerConfig(cfg *config.Config) (log.LoggerConfig, error) {
