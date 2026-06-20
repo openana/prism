@@ -44,7 +44,7 @@ var runCmd = &cobra.Command{
 
 var testCmd = &cobra.Command{
 	Use:   "test",
-	Short: "Test configuration and news without starting the server",
+	Short: "Test configuration, about and news without starting the server",
 	RunE:  runTest,
 }
 
@@ -63,6 +63,7 @@ func init() {
 	testCmd.Flags().BoolP("all", "a", false, "run all tests (config + news)")
 	testCmd.Flags().Bool("test-config", false, "validate configuration")
 	testCmd.Flags().String("test-news", "", "validate news files in the given directory")
+	testCmd.Flags().String("test-about", "", "validate about page Markdown file")
 }
 
 func runServer(cmd *cobra.Command, args []string) error {
@@ -130,8 +131,9 @@ func runTest(cmd *cobra.Command, args []string) error {
 	all, _ := cmd.Flags().GetBool("all")
 	testConfig, _ := cmd.Flags().GetBool("test-config")
 	testNewsPath, _ := cmd.Flags().GetString("test-news")
+	testAboutPath, _ := cmd.Flags().GetString("test-about")
 
-	if !all && !testConfig && testNewsPath == "" {
+	if !all && !testConfig && testNewsPath == "" && testAboutPath == "" {
 		return cmd.Help()
 	}
 
@@ -142,6 +144,7 @@ func runTest(cmd *cobra.Command, args []string) error {
 	var cfg *config.Config
 	configFailed := false
 	newsFailed := false
+	aboutFailed := false
 
 	if testConfig {
 		var err error
@@ -169,7 +172,19 @@ func runTest(cmd *cobra.Command, args []string) error {
 		fmt.Println("news.dir not set; skipping news test")
 	}
 
-	if configFailed || newsFailed {
+	aboutFile := testAboutPath
+	if all && aboutFile == "" && cfg != nil {
+		aboutFile = cfg.About.File
+	}
+	if testAboutPath != "" || (all && aboutFile != "") {
+		if err := runTestAbout(aboutFile); err != nil {
+			aboutFailed = true
+		}
+	} else if all && aboutFile == "" {
+		fmt.Println("about.file not set; skipping about test")
+	}
+
+	if configFailed || newsFailed || aboutFailed {
 		return fmt.Errorf("one or more tests failed")
 	}
 	fmt.Println("all tests passed")
@@ -228,7 +243,26 @@ func runTestConfig(cfg *config.Config) error {
 		fmt.Fprintf(os.Stderr, "\n%d config check(s) failed\n", failed)
 		return fmt.Errorf("config validation failed")
 	}
-	fmt.Println("\nconfig OK")
+	fmt.Print("config OK\n\n")
+	return nil
+}
+
+func runTestAbout(filePath string) error {
+	fmt.Printf("about file: %s\n", filePath)
+
+	logger := zerolog.New(os.Stderr).Level(zerolog.WarnLevel)
+	html, err := web.LoadAbout(filePath, logger)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[FAIL] LoadAbout: %v\n", err)
+		return err
+	}
+
+	htmlLen := 0
+	if html != "" {
+		htmlLen = len(html)
+	}
+	fmt.Printf("parsed about page (%d bytes HTML)\n", htmlLen)
+	fmt.Print("about OK\n\n")
 	return nil
 }
 
@@ -257,6 +291,6 @@ func runTestNews(dir string) error {
 		fmt.Fprintf(os.Stderr, "[FAIL] ParseNewsTemplate: %v\n", err)
 		return err
 	}
-	fmt.Println("news OK")
+	fmt.Print("news OK\n\n")
 	return nil
 }

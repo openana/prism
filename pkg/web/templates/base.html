@@ -189,6 +189,8 @@
                             }}</button>{{ else }}{{ .Locale.T "nav.help" }}{{ end }}</a></li>
                 <li><a href="/news/latest" class="contrast">{{ if .PageType.IsNews }}<button>{{ .Locale.T "nav.news"
                             }}</button>{{ else }}{{ .Locale.T "nav.news" }}{{ end }}</a></li>
+                <li><a href="/about" class="contrast">{{ if .PageType.IsAbout }}<button>{{ .Locale.T "nav.about"
+                            }}</button>{{ else }}{{ .Locale.T "nav.about" }}{{ end }}</a></li>
                 <li hidden><a href="/banme" class="contrast">Ban Me</a></li>
             </ul>
         </nav>

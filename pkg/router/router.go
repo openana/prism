@@ -86,6 +86,7 @@ func NewRouter(cfg RouterConfig, logger zerolog.Logger, accessLogger log.AccessL
 	r.GET("/help/{cname}", rt.deps.webHandler.HandleHelp)
 	r.GET("/news/latest", rt.deps.webHandler.HandleNewsLatest)
 	r.GET("/news/{date}/{slug}", rt.deps.webHandler.HandleNews)
+	r.GET("/about", rt.deps.webHandler.HandleAbout)
 	r.GET("/banme", rt.handleBanMe)
 
 	// API routes

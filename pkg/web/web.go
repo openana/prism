@@ -58,6 +58,7 @@ const (
 	PageTypeBrowse
 	PageTypeHelp
 	PageTypeNews
+	PageTypeAbout
 	PageNotFound
 )
 
@@ -68,6 +69,7 @@ func (t PageType) IsDownloads() bool { return t == PageTypeDownloads }
 func (t PageType) IsBrowse() bool    { return t == PageTypeBrowse }
 func (t PageType) IsHelp() bool      { return t == PageTypeHelp }
 func (t PageType) IsNews() bool      { return t == PageTypeNews }
+func (t PageType) IsAbout() bool     { return t == PageTypeAbout }
 func (t PageType) IsNotFound() bool  { return t == PageNotFound }
 
 func (t PageType) HasTable() bool {
@@ -103,6 +105,7 @@ type Handler interface {
 	HandleHelpIndex(ctx *fasthttp.RequestCtx)
 	HandleNews(ctx *fasthttp.RequestCtx)
 	HandleNewsLatest(ctx *fasthttp.RequestCtx)
+	HandleAbout(ctx *fasthttp.RequestCtx)
 }
 
 type Site struct {
@@ -150,6 +153,7 @@ type ServerConfig interface {
 	ISOInfo() []ISOInfo
 	HelpMirrors() []HelpMirrorConfig
 	NewsDir() string
+	AboutFile() string
 }
 
 type Server struct {
@@ -176,6 +180,7 @@ type Server struct {
 		notFound        *template.Template
 		help            map[string]*HelpPage // cname -> help page
 		news            *template.Template
+		about           *template.Template
 	}
 
 	help struct {
@@ -188,6 +193,8 @@ type Server struct {
 		latest   []NewsHeadline          // top 3, for mirrors aside
 		sorted   []NewsHeadline          // all published, for news page aside
 	}
+
+	aboutHTML template.HTML
 }
 
 func NewServer(cfg ServerConfig, mirrorGetter mirrors.Getter, indexProvider index.Provider, pathResolver purl.Resolver, logger zerolog.Logger) (*Server, error) {
@@ -222,6 +229,7 @@ func NewServer(cfg ServerConfig, mirrorGetter mirrors.Getter, indexProvider inde
 	s.pages.downloadsDetail = parsePage("downloads_detail.html")
 	s.pages.browse = parsePage("browse.html")
 	s.pages.notFound = parsePage("404.html")
+	s.pages.about = parsePage("about.html")
 
 	// Parse help templates for mirrors with auto help mode.
 	siteURL := cfg.Site().URL
@@ -320,6 +328,16 @@ func NewServer(cfg ServerConfig, mirrorGetter mirrors.Getter, indexProvider inde
 	s.news.articles = articles
 	s.news.latest = latest
 	s.news.sorted = sortedNews
+
+	// Load about page from file
+	aboutPath := cfg.AboutFile()
+	if aboutPath != "" {
+		html, err := LoadAbout(aboutPath, s.deps.logger)
+		if err != nil {
+			return nil, fmt.Errorf("web.NewServer: about: %w", err)
+		}
+		s.aboutHTML = html
+	}
 
 	return s, nil
 }

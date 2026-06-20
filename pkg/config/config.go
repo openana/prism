@@ -28,6 +28,8 @@ type Config struct {
 
 	News NewsConfig `yaml:"news"`
 
+	About AboutConfig `yaml:"about"`
+
 	Links []LinkItem `yaml:"links"`
 }
 
@@ -38,6 +40,10 @@ type LinkItem struct {
 
 type NewsConfig struct {
 	Dir string `yaml:"dir"`
+}
+
+type AboutConfig struct {
+	File string `yaml:"file"`
 }
 
 type Log struct {

@@ -70,6 +70,7 @@ func (m *mockServerConfig) Site() Site                      { return m.site }
 func (m *mockServerConfig) ISOInfo() []ISOInfo              { return m.isoInfo }
 func (m *mockServerConfig) HelpMirrors() []HelpMirrorConfig { return nil }
 func (m *mockServerConfig) NewsDir() string                 { return "" }
+func (m *mockServerConfig) AboutFile() string               { return "" }
 
 // ---------------------------------------------------------------------------
 // test data helpers
