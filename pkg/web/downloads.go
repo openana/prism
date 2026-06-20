@@ -47,6 +47,8 @@ func GroupByCategory(infos []ISOInfo) []CategoryGroup {
 func (s *Server) HandleDownloads(ctx *fasthttp.RequestCtx) {
 	ctx.Response.Header.Set("Cache-Control", "public, max-age=3600")
 
+	nonce := getUserValueString(ctx, "nonce")
+
 	ctx.SetContentType("text/html; charset=utf-8")
 	ctx.SetBodyStreamWriter(func(w *bufio.Writer) {
 		page := DownloadsIndexPageData{
@@ -54,6 +56,7 @@ func (s *Server) HandleDownloads(ctx *fasthttp.RequestCtx) {
 				Locale:   s.resolveLocale(ctx),
 				PageType: PageTypeDownloads,
 				Title:    "downloads.title",
+				Nonce:    nonce,
 			},
 			Categories: s.cfg.categories,
 		}
@@ -86,12 +89,15 @@ func (s *Server) HandleDownloadsDetail(ctx *fasthttp.RequestCtx) {
 		return
 	}
 
+	nonce := getUserValueString(ctx, "nonce")
+
 	ctx.SetContentType("text/html; charset=utf-8")
 	ctx.SetBodyStreamWriter(func(w *bufio.Writer) {
 		if err := s.pages.downloadsDetail.ExecuteTemplate(w, "base", DownloadsDetailPageData{PageBase: PageBase{
 			Locale:   s.resolveLocale(ctx),
 			PageType: PageTypeDownloads,
 			Title:    "downloads.title",
+			Nonce:    nonce,
 		}, Info: s.cfg.isoInfo[idx]}); err != nil {
 			s.deps.logger.Error().Err(err).Msg("failed to render template")
 		}

@@ -54,12 +54,18 @@ type Log struct {
 }
 
 type HTTP struct {
-	Listen         string `yaml:"listen"`
-	ProtoHeader    string `yaml:"proto_header"`
-	RemoteIPHeader string `yaml:"remote_ip_header"`
-	Concurrency    *int   `yaml:"concurrency"`
-	KeepAlive      *bool  `yaml:"keepalive"`
-	TCPKeepAlive   *bool  `yaml:"tcp_keepalive"`
+	Listen             string `yaml:"listen"`
+	ProtoHeader        string `yaml:"proto_header"`
+	RemoteIPHeader     string `yaml:"remote_ip_header"`
+	Concurrency        *int   `yaml:"concurrency"`
+	KeepAlive          *bool  `yaml:"keepalive"`
+	TCPKeepAlive       *bool  `yaml:"tcp_keepalive"`
+	ReadTimeout        string `yaml:"read_timeout"`
+	WriteTimeout       string `yaml:"write_timeout"`
+	IdleTimeout        string `yaml:"idle_timeout"`
+	MaxRequestBodySize string `yaml:"max_request_body_size"`
+	MaxConnsPerIP      int    `yaml:"max_conns_per_ip"`
+	ReduceMemoryUsage  *bool  `yaml:"reduce_memory_usage"`
 }
 
 type Index struct {

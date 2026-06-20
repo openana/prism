@@ -92,6 +92,7 @@ type PageBase struct {
 	Title    string
 	Locale   *i18n.Locale
 	PageType PageType
+	Nonce    string
 }
 
 type Handler interface {
@@ -106,6 +107,18 @@ type Handler interface {
 	HandleNews(ctx *fasthttp.RequestCtx)
 	HandleNewsLatest(ctx *fasthttp.RequestCtx)
 	HandleAbout(ctx *fasthttp.RequestCtx)
+}
+
+func getUserValueString(ctx *fasthttp.RequestCtx, key string) string {
+	v := ctx.UserValue(key)
+	if v == nil {
+		return ""
+	}
+	b, ok := v.([]byte)
+	if !ok {
+		return ""
+	}
+	return string(b)
 }
 
 type Site struct {

@@ -69,6 +69,7 @@ func (s *Server) HandleHelp(ctx *fasthttp.RequestCtx) {
 				Title:    "help.title",
 				Locale:   locale,
 				PageType: PageTypeHelp,
+				Nonce:    getUserValueString(ctx, "nonce"),
 			},
 			Endpoint:  helpPage.Endpoint,
 			HelpLinks: s.help.sorted,

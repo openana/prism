@@ -90,6 +90,7 @@ func (s *Server) HandleStatus(ctx *fasthttp.RequestCtx) {
 				Locale:   s.resolveLocale(ctx),
 				PageType: PageTypeStatus,
 				Title:    "status.title",
+				Nonce:    getUserValueString(ctx, "nonce"),
 			},
 			Mirrors: mirrors,
 		}); err != nil {

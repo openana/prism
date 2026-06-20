@@ -44,6 +44,8 @@ func NewTunasyncHost(cfg TunasyncHostConfig, logger zerolog.Logger) *TunasyncHos
 		logger:   logger.With().Str("module", "mirrors.TunasyncHost:"+cfg.Name()).Logger(),
 		client: &fasthttp.Client{
 			ReadTimeout:         cfg.Timeout(),
+			WriteTimeout:        cfg.Timeout(),
+			MaxConnsPerHost:     512,
 			MaxIdleConnDuration: 90 * time.Second,
 		},
 	}

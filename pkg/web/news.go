@@ -222,6 +222,7 @@ func (s *Server) HandleNews(ctx *fasthttp.RequestCtx) {
 				Title:    "news.title",
 				Locale:   locale,
 				PageType: PageTypeNews,
+				Nonce:    getUserValueString(ctx, "nonce"),
 			},
 			Article:     article,
 			NewsLinks:   s.news.sorted,

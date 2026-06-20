@@ -40,6 +40,8 @@ func NewNginxFetcher(cfg NginxFetcherConfig, logger zerolog.Logger) *NginxFetche
 	p.deps.logger = logger.With().Str("module", "index.NginxFetcher").Str("baseURL", p.cfg.baseURL).Logger()
 	p.deps.client = &fasthttp.Client{
 		ReadTimeout:         cfg.Timeout(),
+		WriteTimeout:        cfg.Timeout(),
+		MaxConnsPerHost:     512,
 		MaxIdleConnDuration: 90 * time.Second,
 	}
 

@@ -22,6 +22,7 @@ func (s *Server) handleNotFound(ctx *fasthttp.RequestCtx, backURL string, backTi
 				Title:    "error.title",
 				Locale:   s.resolveLocale(ctx),
 				PageType: PageNotFound,
+				Nonce:    getUserValueString(ctx, "nonce"),
 			},
 			BackURL:   backURL,
 			BackTitle: backTitle,

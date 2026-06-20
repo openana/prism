@@ -3,6 +3,8 @@ package router
 import (
 	"bufio"
 	"bytes"
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"strconv"
 
@@ -110,9 +112,39 @@ func NewRouter(cfg RouterConfig, logger zerolog.Logger, accessLogger log.AccessL
 var (
 	protoHTTPBytes  = []byte("http")
 	protoHTTPSBytes = []byte("https")
+
+	cspHeaderTemplate = []byte("default-src 'self'; script-src 'self' 'nonce-")
+
+	nonceKey              = "nonce"
+	xFrameOptionsValue    = []byte("DENY")
+	xContentTypeOptsValue = []byte("nosniff")
+	referrerPolicyValue   = []byte("strict-origin-when-cross-origin")
 )
 
 func (rt *Router) HandleRequest(ctx *fasthttp.RequestCtx) {
+	// Generate per-request CSP nonce
+	var nonceBytes [16]byte
+	if _, err := rand.Read(nonceBytes[:]); err != nil {
+		rt.deps.logger.Error().Err(err).Msg("failed to generate nonce")
+	}
+	nonceHex := make([]byte, hex.EncodedLen(len(nonceBytes)))
+	hex.Encode(nonceHex, nonceBytes[:])
+
+	// Inject security headers
+	ctx.Response.Header.SetBytesV("X-Frame-Options", xFrameOptionsValue)
+	ctx.Response.Header.SetBytesV("X-Content-Type-Options", xContentTypeOptsValue)
+	ctx.Response.Header.SetBytesV("Referrer-Policy", referrerPolicyValue)
+
+	// Build CSP
+	csp := make([]byte, 0, len(cspHeaderTemplate)+len(nonceHex)+1)
+	csp = append(csp, cspHeaderTemplate...)
+	csp = append(csp, nonceHex...)
+	csp = append(csp, '\'')
+	ctx.Response.Header.SetBytesV("Content-Security-Policy", csp)
+
+	// Store nonce
+	ctx.SetUserValue(nonceKey, nonceHex)
+
 	rt.r.Handler(ctx)
 
 	ip := ctx.Request.Header.Peek(rt.cfg.remoteIPHeader)

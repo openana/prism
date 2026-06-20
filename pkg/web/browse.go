@@ -40,6 +40,7 @@ var slashBytes = []byte("/")
 
 func (s *Server) HandleBrowse(ctx *fasthttp.RequestCtx) {
 	locale := s.resolveLocale(ctx)
+	nonce := getUserValueString(ctx, "nonce")
 
 	rawPath := ctx.QueryArgs().Peek("path")
 	if len(rawPath) == 0 {
@@ -109,6 +110,7 @@ func (s *Server) HandleBrowse(ctx *fasthttp.RequestCtx) {
 			Title:    "nav.browse",
 			PageType: PageTypeBrowse,
 			Locale:   locale,
+			Nonce:    nonce,
 		},
 		Path:        string(rawPath),
 		Breadcrumbs: breadcrumbs,

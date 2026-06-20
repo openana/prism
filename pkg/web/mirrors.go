@@ -72,6 +72,7 @@ func (s *Server) HandleMirrors(ctx *fasthttp.RequestCtx) {
 				Title:    "mirrors.title",
 				Locale:   s.resolveLocale(ctx),
 				PageType: PageTypeMirrors,
+				Nonce:    getUserValueString(ctx, "nonce"),
 			},
 			Mirrors:    mirrors,
 			LatestNews: s.news.latest,

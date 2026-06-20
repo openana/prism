@@ -46,6 +46,7 @@ func (s *Server) HandleAbout(ctx *fasthttp.RequestCtx) {
 				Title:    "about.title",
 				Locale:   locale,
 				PageType: PageTypeAbout,
+				Nonce:    getUserValueString(ctx, "nonce"),
 			},
 			BodyHTML: s.aboutHTML,
 		}); err != nil {
