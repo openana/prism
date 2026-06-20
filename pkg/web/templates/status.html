@@ -3,7 +3,7 @@
 <article>
     <header class="table-title">
         <img class="header-icon" src="/static/img/graph-bar-horizontal-16.svg" alt=""><strong>{{ .Locale.T "status.title" }}</strong>
-        <input class="search" name="search" placeholder="Search" aria-label="Search" />
+        <input class="search" name="search" placeholder="{{ .Locale.T "search.press_slash" }}" aria-label="Search" />
     </header>
     <div class="overflow-auto">
         <table class="striped" id="status-table">
@@ -46,5 +46,13 @@
         valueNames: ['name', 'type', 'last_update', 'last_started', 'last_ended', 'next_schedule', 'upstream', 'status', 'size']
     };
     var statusList = new List('status', options);
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === '/' && !/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) {
+            e.preventDefault();
+            var input = document.querySelector('.search');
+            if (input) input.focus();
+        }
+    });
 </script>
 {{ end }}
