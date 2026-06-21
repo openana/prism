@@ -4,14 +4,20 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"runtime"
 	"runtime/pprof"
 	"strconv"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func initProfiles() func() {
+	http.Handle("/metrics", promhttp.Handler())
+	http.ListenAndServe(":8080", nil)
+
 	runtime.SetMutexProfileFraction(10)
 
 	timestamp := strconv.FormatInt(time.Now().UnixNano(), 10)

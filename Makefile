@@ -14,13 +14,16 @@ LDFLAGS := -s -w \
 	-X '$(MODULE)/pkg/meta.Platform=$(GOOS)/$(GOARCH)' \
 	-X '$(MODULE)/pkg/meta.GoVersion=$(GOVER)'
 
-.PHONY: build test bench clean update-cname gen-helpz wire
+.PHONY: build test bench clean update-cname gen-helpz wire build-debug
 .DEFAULT_GOAL := all
 
 all: clean gen-helpz test-helpz build
 
 build:
 	go build -ldflags "$(LDFLAGS)" -o $(BINARY) ./cmd/prism/
+
+build-debug:
+	go build -tags debug -ldflags "$(LDFLAGS)" -o $(BINARY)-debug ./cmd/prism/
 
 test:
 	go test ./...
