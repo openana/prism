@@ -325,7 +325,7 @@ class StressRunner:
         config_path = tmp_path / "config.yaml"
         config_path.write_text(self._config_yaml)
         proc = subprocess.Popen(
-            [str(binary), "-config", str(config_path)],
+            [str(binary), "run", "--config", str(config_path)],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             cwd=str(tmp_path),
